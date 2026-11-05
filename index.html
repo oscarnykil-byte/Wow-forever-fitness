@@ -113,7 +113,7 @@ html:not(.has-motion) .ev:active{transform:scale(.98)}
 .alarm{display:grid;grid-template-columns:auto 1fr;gap:16px;align-items:center}
 .clock{font-family:var(--f-display);font-size:54px;line-height:1;color:var(--fg);min-width:4.2ch;font-variant-numeric:tabular-nums}
 .clock.on{color:var(--gold)}
-.seg{display:inline-flex;border:1px solid var(--line-2);border-radius:10px;overflow:hidden}
+.seg{display:inline-flex;flex-wrap:wrap;max-width:100%;border:1px solid var(--line-2);border-radius:10px;overflow:hidden}
 .seg button{background:transparent;border:0;padding:8px 12px;white-space:nowrap;cursor:pointer;font-weight:700;font-size:14px;color:var(--muted)}
 .seg button+button{border-left:1px solid var(--line-2)}
 .seg button[aria-pressed="true"]{background:var(--gold);color:var(--gold-ink)}
@@ -375,7 +375,8 @@ html:not(.has-motion) .lvl-num{animation:rise .5s ease-out}
 /* Toasts */
 #toasts{position:fixed;z-index:60;right:max(16px,env(safe-area-inset-right,0px));bottom:max(16px,env(safe-area-inset-bottom,0px));display:flex;flex-direction:column;gap:8px;align-items:flex-end;pointer-events:none;max-width:calc(100% - 32px)}
 .toast{background:#0e1018;border:1px solid var(--xp);color:var(--fg);padding:10px 14px;border-radius:10px;font-weight:700;font-size:15px;box-shadow:0 8px 24px rgba(0,0,0,.5)}
-html:not(.has-motion) .toast{animation:toast 3.2s ease forwards}
+html:not(.has-motion):not(.no-anim) .toast{animation:toast 3.2s ease forwards}
+html.no-anim *,html.no-anim *::before,html.no-anim *::after{animation:none!important;transition:none!important}
 .toast.ach{border-color:var(--gold);color:var(--gold)}
 .toast.info{border-color:var(--line-2)}
 /* Motion effects */
@@ -674,8 +675,11 @@ function grant(xp,gold,src,label){const p=P();const before=levelInfo(totalXP(p))
 /* ================= Motion ================= */
 const MO=window.Motion||null;
 const RM=(()=>{try{return matchMedia('(prefers-reduced-motion: reduce)').matches}catch(e){return false}})();
-const CAN=!!(MO&&MO.animate&&MO.stagger)&&!RM;
-if(CAN)document.documentElement.classList.add('has-motion');
+S.prefs=Object.assign({anim:'auto',fig:'auto'},S.prefs||{});
+let CAN=false;
+function applyPrefs(){const a=S.prefs.anim;CAN=!!(MO&&MO.animate&&MO.stagger)&&(a==='on'||(a==='auto'&&!RM));document.documentElement.classList.toggle('has-motion',CAN);document.documentElement.classList.toggle('no-anim',a==='off'||(a==='auto'&&RM))}
+applyPrefs();
+function figMode(){const f=S.prefs.fig;if(f==='hidden')return 'hidden';if(f==='still')return 'still';if(f==='anim')return 'anim';return RM?'still':'anim'}
 const EASE=[.22,1,.36,1];
 const SPRING={type:'spring',bounce:.3,duration:.6};
 function A(el,kf,o){if(!CAN||!el||(el.length===0))return null;try{return MO.animate(el,kf,o||{duration:.4,ease:EASE})}catch(e){return null}}
@@ -865,10 +869,10 @@ function figProps(def,F){const h1=F.limbs.la[2],h2=F.limbs.ra[2];const db=h=>`<l
     case 'anchor':{const c=[(h1[0]+h2[0])/2,(h1[1]+h2[1])/2];return `<line class="fp-line" x1="180" y1="52" x2="${c[0]}" y2="${c[1]}" style="stroke:var(--q-uncommon)"></line>`}
     case 'rope':{const c=F.rope;return `<path class="fp-line" d="M${h1[0]},${h1[1]} C${h1[0]-10},${c} ${h2[0]+10},${c} ${h2[0]},${h2[1]}"></path>`}}return ''}
 function figDraw(g,def,P){const F=figPose(def,P);LIMBS.forEach(k=>{const el=g.querySelector(`[data-k="${k}"]`);if(el)el.setAttribute('points',pts(F.limbs[k]))});g.querySelector('.torso').setAttribute('points',pts(def.front?[[F.hip[0]-6,F.hip[1]],[F.hip[0]+6,F.hip[1]],F.hip,F.neck,[F.neck[0]-11,F.neck[1]+3],[F.neck[0]+11,F.neck[1]+3],F.neck]:[F.hip,F.neck]));const hd=g.querySelector('.fh');hd.setAttribute('cx',F.head[0].toFixed(1));hd.setAttribute('cy',F.head[1].toFixed(1));const pd=g.querySelector('.fp-dyn');if(pd)pd.innerHTML=figProps(def,F)}
-function mountFig(el){const ex=el.dataset.fig,def=FIG[ex];if(!def||el.dataset.mounted)return;el.dataset.mounted='1';
-  el.innerHTML=`<svg class="fig" viewBox="0 0 200 140" role="img" aria-label="Animation: ${esc(EX[ex].n)}"><line class="fg-line" x1="4" y1="131" x2="196" y2="131"></line>${figStatic(def)}${RM?figSkel('ghost'):''}${figSkel('main')}</svg>`;
+function mountFig(el){const ex=el.dataset.fig,def=FIG[ex];if(!def||el.dataset.mounted)return;el.dataset.mounted='1';const mode=figMode();if(mode==='hidden'){el.hidden=true;return}const still=mode==='still';
+  el.innerHTML=`<svg class="fig" viewBox="0 0 200 140" role="img" aria-label="Animation: ${esc(EX[ex].n)}"><line class="fg-line" x1="4" y1="131" x2="196" y2="131"></line>${figStatic(def)}${still?figSkel('ghost'):''}${figSkel('main')}</svg>`;
   const K=def.k.map(k=>figResolve(def,k)),n=K.length;const durs=K.map((_,i)=>Array.isArray(def.dur)?def.dur[i%def.dur.length]:def.dur);const total=durs.reduce((a,b)=>a+b,0);const g=el.querySelector('.main');
-  if(RM){figDraw(g,def,K[0]);figDraw(el.querySelector('.ghost'),def,K[Math.min(1,n-1)]);return}
+  if(still){figDraw(g,def,K[0]);figDraw(el.querySelector('.ghost'),def,K[Math.min(1,n-1)]);return}
   const at=time=>{let t=((time%total)+total)%total,i=0;while(i<n-1&&t>durs[i]){t-=durs[i];i++}const u=t/durs[i];figDraw(g,def,figLerp(K[i],K[(i+1)%n],.5-.5*Math.cos(Math.PI*u)))};
   at(0);
   if(CAN){let c=null;c=MO.animate(0,total,{duration:total,repeat:Infinity,ease:'linear',onUpdate:v=>{if(!el.isConnected){c&&c.stop();return}at(v)}})}
@@ -1185,6 +1189,8 @@ function viewHero(p){
         <label class="field"><span>Namn</span><input type="text" id="s-name" maxlength="24" value="${esc(p.name)}"></label>
         <label class="field"><span>Klass</span><select id="s-cls">${Object.entries(CLASSES).map(([k,c])=>`<option value="${k}" ${p.cls===k?'selected':''}>${c.n} – ${c.d}</option>`).join('')}</select></label>
         <div class="field"><span>Svårighet</span><div class="seg" role="group">${Object.entries(DIFF).map(([k,d])=>`<button type="button" data-act="setDiff" data-v="${k}" aria-pressed="${p.diff===k}">${d.n}</button>`).join('')}</div></div>
+        <div class="field"><span>Animationer i appen</span><div class="seg" role="group">${[["auto","Som enheten"],["on","På"],["off","Av"]].map(([k,n])=>`<button type="button" data-act="setPref" data-k="anim" data-v="${k}" aria-pressed="${S.prefs.anim===k}">${n}</button>`).join('')}</div><small class="tip">Övergångar, XP som flyger, gnistor och liknande. "Som enheten" följer inställningen för minskad rörelse.</small></div>
+        <div class="field"><span>Övningsfigurer</span><div class="seg" role="group">${[["auto","Som enheten"],["anim","Animerade"],["still","Stilla"],["hidden","Dolda"]].map(([k,n])=>`<button type="button" data-act="setPref" data-k="fig" data-v="${k}" aria-pressed="${S.prefs.fig===k}">${n}</button>`).join('')}</div><small class="tip">Stilla visar start- och slutposition. Dolda tar bort figuren helt.</small></div>
         <div class="field"><span>Redskap hemma</span><div class="checks">${Object.entries(EQUIP).map(([k,n])=>`<label><input type="checkbox" data-act="setEq" value="${k}" ${p.equip.includes(k)?'checked':''}>${n}</label>`).join('')}</div></div>
         <div class="field"><span>Hjältar på den här enheten</span><div class="heroes">${Object.values(S.profiles).map(h=>`<button type="button" class="btn small ${h.id===p.id?'primary':''}" data-act="switch" data-v="${h.id}">${esc(h.name)}</button>`).join('')}<button type="button" class="btn small ghost" data-act="newHero">+ Ny hjälte</button></div></div>
         <label class="field"><span>Säkerhetskopia</span><textarea id="backupCode" readonly>WFFB-${b64e(p)}</textarea></label>
@@ -1227,6 +1233,7 @@ document.addEventListener('click',ev=>{
     case 'claim':{const qs=getQuests(p);const q=qs[Number(v)];const cl=p.qclaimed[today()]=p.qclaimed[today()]||[];if(q&&!cl.includes(Number(v))){cl.push(Number(v));burstAt(lastRect,28,150);grant(q.xp,q.gold,'quest',`Uppdrag klart! +${q.xp} XP, +${q.gold} guld`)}break}
     case 'bossClaim':{const {ws,b}=bossNow();if(!p.bossKills[ws]&&weekXP(p)>=BOSS_HP){p.bossKills[ws]=true;beep('lvl');burstAt($('.crest')&&$('.crest').getBoundingClientRect(),60,260);grant(0,150,'boss',`${b.n} är fälld! +150 guld`)}break}
     case 'buy':{const it=SHOP.find(x=>x.id===v);if(!it||p.gold<it.cost)return;if(it.id==='freeze'){if(p.freezes>=2)return;p.freezes++}else{p.titles.push(it.title);p.title=it.title}p.gold-=it.cost;save();renderAll();toast(`Köpt: ${it.n}`,'ach');break}
+    case 'setPref':{const k=el.dataset.k;if(k!=='anim'&&k!=='fig')return;S.prefs[k]=v;save();applyPrefs();renderAll();toast(k==='anim'?`Animationer: ${el.textContent.toLowerCase()}`:`Övningsfigurer: ${el.textContent.toLowerCase()}`,'info');break}
     case 'setDiff':p.diff=v;p.qcache=p.qcache&&p.qcache.day===today()?p.qcache:null;save();renderAll();break;
     case 'switch':S.active=v;confirmDelete=false;save();renderAll();break;
     case 'newHero':S.active=null;renderAll();break;
