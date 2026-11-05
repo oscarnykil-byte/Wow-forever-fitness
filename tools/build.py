@@ -22,6 +22,11 @@ head = """<!doctype html>
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="Forever Fitness">
+<style>
+/* Samma skydd som artifact-skalet: håll innehållet fritt från statusraden och hemindikatorn */
+:root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);background:#10121a}
+body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);background:#10121a;z-index:45}
+</style>
 </head>
 <body>
 """

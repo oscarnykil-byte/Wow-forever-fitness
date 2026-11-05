@@ -1,6 +1,6 @@
 // Forever Fitness service worker: gör appen installerbar och användbar offline.
 // Höj versionen när du vill tvinga fram en ny cache.
-const CACHE = 'forever-fitness-v2';
+const CACHE = 'forever-fitness-v3';
 const SHELL = [
   './',
   './index.html',
