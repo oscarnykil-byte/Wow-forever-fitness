@@ -364,20 +364,17 @@ const CLASSES={
   shaman:{n:'Shaman',d:'+12 % XP på styrka och kondition',bonus:{str:.12,cardio:.12}},
   mage:{n:'Mage',d:'+20 % XP på tidsövningar (planka m.fl.)',sec:.2},
   warlock:{n:'Warlock',d:'+25 % XP på raidvarningar',src:{alarm:.25}},
-  monk:{n:'Monk',d:'+25 % XP på bål',bonus:{core:.25}},
-  druid:{n:'Druid',d:'+8 % XP på allt',bonus:{str:.08,leg:.08,core:.08,cardio:.08}},
-  demonhunter:{n:'Demon Hunter',d:'+12 % XP på benkraft och kondition',bonus:{leg:.12,cardio:.12}},
-  deathknight:{n:'Death Knight',d:'+25 % XP på spelhändelser',src:{event:.25}},
-  evoker:{n:'Evoker',d:'+25 % XP i dungeon-rundor',src:{dungeon:.25}}
+  druid:{n:'Druid',d:'+8 % XP på allt',bonus:{str:.08,leg:.08,core:.08,cardio:.08}}
 };
-const OLD_CLS={krigare:'warrior',jagare:'hunter',smygare:'rogue',munk:'monk'};
+const OLD_CLS={krigare:'warrior',jagare:'hunter',smygare:'rogue',munk:'druid',monk:'druid',demonhunter:'rogue',deathknight:'warrior',evoker:'mage'};
 const DIFF={easy:{n:'Lätt',m:.6,d:'Färre reps. Bra start eller för yngre hjältar.'},normal:{n:'Normal',m:1,d:'Lagom för de flesta vuxna.'},hard:{n:'Hård',m:1.4,d:'För dig som redan tränar.'}};
 const EVENTS=[
   {id:'death',n:'Jag dog',tag:'Dödsstraff',ex:'burpee',f:.6},
   {id:'wipe',n:'Gruppen wipeade',tag:'Hela gruppen lider',ex:'plank',f:1},
   {id:'load',n:'Laddningsskärm eller flygresa',tag:'Res inte stilla',ex:'squat',f:1},
-  {id:'queue',n:'Väntar i kö',tag:'Kötid',ex:'wallsit',f:1},
-  {id:'ding',n:'Level up i spelet',tag:'Ding!',ex:'pushup',f:1},
+  {id:'queue',n:'Väntar i kö eller på gruppen',tag:'Väntetid',ex:'wallsit',f:1},
+  {id:'walk',n:'Springer till dungeonen',tag:'Ingen dungeon finder',ex:'knees',f:1},
+  {id:'ding',n:'Level up i spelet',tag:'Ding! Mot 60',ex:'pushup',f:1},
   {id:'loot',n:'Bra loot',tag:'Fira',ex:'jacks',f:1},
   {id:'boss',n:'Fällde en boss',tag:'Segerdans',ex:'lunge',f:1},
   {id:'afk',n:'Går AFK en stund',tag:'Rör på dig',ex:'climber',f:1}
@@ -597,7 +594,7 @@ function renderAll(){const app=$('#app');if(!P()){app.innerHTML=renderCreate();r
 function renderCreate(){
   const has=Object.keys(S.profiles).length>0;
   return `<div class="create">
-    <div class="create-hero"><p class="eyebrow">Träningskompanjon för WoW-kvällar</p><h1>Forever Fitness</h1>
+    <div class="create-hero"><p class="eyebrow">Träningskompanjon för WoW Forever</p><h1>Forever Fitness</h1>
       <p>Varje död, laddningsskärm och level up i spelet blir ett litet set i verkligheten. Samla XP, håll svitten vid liv och fäll veckans boss.</p></div>
     <div class="how">
       <div><b>Spela och träna</b>Tryck när något händer i spelet och gör övningen direkt.</div>
@@ -607,7 +604,7 @@ function renderCreate(){
     <section class="panel">
       <div class="panel-head"><h2>Skapa din hjälte</h2>${has?'<button type="button" class="btn small ghost" data-act="cancelCreate">Tillbaka</button>':''}</div>
       <label class="field"><span>Namn</span><input type="text" id="c-name" maxlength="24" placeholder="t.ex. Oscar eller Pappa Björn" value="${esc(draft.name)}" autocomplete="off"></label>
-      <div class="field"><span>Välj samma klass som din main i WoW. Varje klass har sin egen XP-bonus.</span><div class="classes">
+      <div class="field"><span>Välj samma klass som din main i WoW Forever. Varje klass har sin egen XP-bonus.</span><div class="classes">
         ${Object.entries(CLASSES).map(([k,c])=>`<button type="button" class="cls" data-act="draftCls" data-v="${k}" aria-pressed="${draft.cls===k}"><b>${c.n}</b><small>${c.d}</small></button>`).join('')}
       </div></div>
       <div class="field"><span>Svårighet</span><div class="seg" role="group">${Object.entries(DIFF).map(([k,d])=>`<button type="button" data-act="draftDiff" data-v="${k}" aria-pressed="${draft.diff===k}">${d.n}</button>`).join('')}</div><small class="tip">${DIFF[draft.diff].d} XP räknas mot din egen nivå, så duellen blir rättvis.</small></div>
@@ -661,7 +658,7 @@ function rulesEditor(p){
   <div class="rules">
     ${EVENTS.map(e=>`<label class="rule"><span>${esc(e.n)}</span><select data-rule="${e.id}" aria-label="Övning för ${esc(e.n)}">${exOptions(p.evmap[e.id]&&pool().includes(p.evmap[e.id])?p.evmap[e.id]:e.ex)}</select><span></span></label>`).join('')}
     ${p.customEvents.map(c=>`<div class="rule"><span>${esc(c.n)}</span><select data-crule="${c.id}" aria-label="Övning för ${esc(c.n)}">${exOptions(c.ex)}</select><button type="button" class="btn small ghost x" data-act="rmCustom" data-v="${c.id}" aria-label="Ta bort ${esc(c.n)}">×</button></div>`).join('')}
-    <div class="rule add"><input type="text" id="newEvName" maxlength="32" placeholder="Ny händelse, t.ex. Missade timern" autocomplete="off"><select id="newEvEx" aria-label="Övning för ny händelse">${exOptions('squat')}</select><button type="button" class="btn small" data-act="addCustom">Lägg till</button></div>
+    <div class="rule add"><input type="text" id="newEvName" maxlength="32" placeholder="Ny händelse, t.ex. Ny talentpunkt" autocomplete="off"><select id="newEvEx" aria-label="Övning för ny händelse">${exOptions('squat')}</select><button type="button" class="btn small" data-act="addCustom">Lägg till</button></div>
   </div>
   <div class="row"><button type="button" class="btn small ghost" data-act="resetRules">Återställ standardregler</button></div>`;
 }
