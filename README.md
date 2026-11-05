@@ -11,6 +11,8 @@ Du samlar XP, går upp i nivå (1–60), håller svitten vid liv och fäller vec
 - **Dagens uppdrag** och **veckans boss**.
 - **WoW-klasser** med egna XP-bonusar, bedrifter, butik och titlar.
 - **Framsteg**: XP per dag, bästa set per övning och personbästa (+10 guld när du slår rekord).
+- **Spelkväll och raidkväll**: starta när du loggar in, raidvarningen startar automatiskt och du får en kvällsrapport när du avslutar.
+- **Loot**: slumpade porträttramar, fanor och titlar i fem sällsyntheter, samlade i en väska.
 - **Familjeduell** via kod, och säkerhetskopia för att flytta en hjälte mellan enheter.
 
 Framstegen sparas i webbläsaren på varje enhet. Använd säkerhetskopian under fliken Hjälte
