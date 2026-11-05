@@ -400,21 +400,110 @@ html.no-anim *,html.no-anim *::before,html.no-anim *::after{animation:none!impor
 @keyframes rise{from{opacity:0;transform:translateY(20px) scale(.9)}to{opacity:1;transform:none}}
 @media (prefers-reduced-motion:reduce){*{animation-duration:.01ms!important;transition:none!important}}
 
+/* ---------- Ikoner, hints, fällbara paneler, händelserutor ---------- */
+.ic{width:16px;height:16px;flex:none;display:none}
+.ti{display:none;width:24px;height:24px}
+.rested-badge{display:none}
+.info-btn{display:none;place-items:center;width:28px;height:28px;border-radius:50%;border:1px solid var(--line-2);background:transparent;color:var(--muted);font-weight:800;font-size:14px;cursor:pointer;flex:none}
+.panel.show-hint .info-btn{background:var(--gold);color:var(--gold-ink);border-color:var(--gold)}
+.head-actions{display:flex;gap:8px;align-items:center}
+details.fold > summary{list-style:none;cursor:pointer}
+details.fold > summary::-webkit-details-marker{display:none}
+details.fold > summary .label::after{content:"";display:inline-block;width:7px;height:7px;border-right:2px solid currentColor;border-bottom:2px solid currentColor;transform:rotate(45deg);margin-left:10px;vertical-align:2px;transition:transform .2s}
+details.fold[open] > summary .label::after{transform:rotate(225deg);vertical-align:-2px}
+details.fold:not([open]){gap:0}
+.ev{position:relative;overflow:hidden;display:grid;grid-template-columns:auto 1fr;grid-template-rows:auto auto;column-gap:12px;row-gap:0;align-items:center;user-select:none;-webkit-user-select:none;-webkit-touch-callout:none;touch-action:manipulation}
+.ev .ev-ic{grid-row:1/3;width:40px;height:40px;border-radius:10px;display:grid;place-items:center;background:#0e1018;border:1px solid var(--line);color:var(--gold)}
+.ev .ev-ic svg{width:22px;height:22px}
+.ev .ev-amt{font-size:15px;color:var(--muted);line-height:1.2}
+.ev .ev-amt b{font-family:var(--f-display);font-size:24px;color:var(--fg);font-weight:700;margin-right:4px}
+.ev .ev-n{font-size:13px;color:var(--muted);font-weight:700;line-height:1.25}
+.ev::after{content:"";position:absolute;left:0;bottom:0;height:3px;width:0;background:var(--gold)}
+.ev.holding::after{width:100%;transition:width .55s linear}
+.ev.custom .ev-ic{color:var(--xp-2)}
+.session.idle{display:flex;flex-direction:column;align-items:stretch}
+.sess-cta{display:flex;gap:10px;flex-wrap:wrap}
+.sess-cta .btn.primary{max-width:360px}
+.sess-cta .btn.primary{flex:1 1 220px;padding:14px 18px;font-size:17px}
+.sess-cta .btn .ic{display:block;width:20px;height:20px}
+.sess-cta .btn:not(.primary){flex:0 1 auto}
+.sess-live{display:grid;grid-template-columns:auto minmax(0,1fr) auto;gap:14px;align-items:center}
+.sess-live .sess-clock{font-size:34px}
+.sess-live .sess-kind{font-family:var(--f-label);font-size:12px;letter-spacing:.08em;color:var(--gold)}
+details.sess-old{grid-column:1/-1}
+details.sess-old summary{cursor:pointer;color:var(--muted);font-weight:700;font-size:14px}
+.intro{display:flex;flex-direction:column;gap:14px}
+.intro ol{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:12px}
+.intro li{display:grid;grid-template-columns:44px 1fr;gap:12px;align-items:center}
+.intro li span{width:44px;height:44px;border-radius:12px;display:grid;place-items:center;background:#0e1018;border:1px solid var(--line);color:var(--gold)}
+.intro li span svg{width:24px;height:24px}
+.intro li b{display:block}
+.intro li small{color:var(--muted);font-size:14px}
+
+/* ---------- Mobil: kompakt sidhuvud, bottenmeny ---------- */
 @media (max-width:820px){
-  .grid{grid-template-columns:1fr}
-  .frame{grid-template-columns:auto 1fr}
-  .chips{grid-column:1/-1;flex-direction:row;flex-wrap:wrap}
-  .chip{flex:1 1 0;min-width:0;flex-direction:column;align-items:flex-start;gap:0}
+  #app{gap:14px;padding-block:10px calc(86px + env(safe-area-inset-bottom,0px))}
+  .grid{grid-template-columns:1fr;gap:14px}
+  .stack{gap:14px}
+  .frame{position:sticky;top:env(safe-area-inset-top,0px);z-index:30;grid-template-columns:auto minmax(0,1fr) auto;gap:12px;padding:10px 12px;border-radius:14px;box-shadow:0 8px 20px rgba(0,0,0,.45)}
+  .portrait{width:46px;height:46px;border-width:2px;box-shadow:0 0 0 2px var(--bg),0 0 0 3px var(--gold-dim),0 0 16px 2px var(--glow,transparent)}
+  .portrait span{font-size:24px}
+  .portrait .lvl-badge{font-size:11px;min-width:22px;padding:0 5px;bottom:-7px;border-width:1px}
+  .who{gap:4px}
+  .who-top{display:flex;align-items:center;gap:8px;min-width:0}
+  .who h1{font-size:22px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
+  .who .sub{font-size:12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .rested-badge{display:inline-block;flex:none;font-size:11px;font-weight:800;color:var(--xp-2);border:1px solid var(--xp);border-radius:999px;padding:0 7px;line-height:18px}
+  .xpbar{height:8px}
+  .xpline{font-size:11px}
+  .xpline > span + span{display:none}
+  .chips{flex-direction:column;gap:5px}
+  .chip{padding:3px 9px;font-size:12px;gap:6px;justify-content:flex-start;border-radius:999px}
+  .chip > span{display:none}
+  .chip .ic{display:block}
+  .chip.streak .ic{color:var(--q-legend)} .chip.gold .ic{color:var(--gold)}
+  .chip b{font-size:14px}
+  .chip.freeze{display:none}
+  .chip .unit{display:none}
+  .tabs{position:fixed;left:0;right:0;bottom:0;z-index:40;grid-template-columns:repeat(4,1fr);gap:0;background:rgba(14,16,24,.95);-webkit-backdrop-filter:blur(12px);backdrop-filter:blur(12px);border-top:1px solid var(--line);padding:6px max(8px,env(safe-area-inset-left,0px)) calc(6px + env(safe-area-inset-bottom,0px)) max(8px,env(safe-area-inset-right,0px))}
+  .tab{align-items:center;border:0;background:transparent!important;padding:6px 2px;border-radius:12px;gap:3px}
+  .tab small,.tab .key{display:none}
+  .tab .ti{display:block;color:var(--muted)}
+  .tab strong{font-family:var(--f-body);font-size:12px;font-weight:700;color:var(--muted)}
+  .tab[aria-selected="true"] strong,.tab[aria-selected="true"] .ti{color:var(--gold)}
+  .tab[aria-selected="true"] .ti{filter:drop-shadow(0 0 6px rgba(230,176,74,.55))}
+  #toasts{bottom:calc(84px + env(safe-area-inset-bottom,0px))}
+  .panel{padding:14px;gap:12px;border-radius:14px}
+  .panel-head h2{font-size:22px}
+  .panel:not(.show-hint) .hint{display:none}
+  .info-btn{display:inline-grid}
+  .events{grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+  .ev{grid-template-columns:auto minmax(0,1fr);grid-template-rows:auto auto;column-gap:10px;row-gap:6px;padding:12px;align-items:center}
+  .ev .ev-ic{grid-row:1;width:34px;height:34px}
+  .ev .ev-ic svg{width:20px;height:20px}
+  .ev .ev-amt{font-size:14px}
+  .ev .ev-amt b{font-size:26px;display:block;line-height:1}
+  .ev .ev-n{grid-column:1/-1;font-size:13px}
+  .toast{font-size:14px;padding:8px 12px}
+  .sess-live{grid-template-columns:minmax(0,1fr) auto}
+  .sess-live .sess-stats{grid-column:1/-1;order:3}
+}
+@media (max-width:640px){
+  #modal,.modal-ghost{place-items:end center;padding:0}
+  .m-box{width:100%;max-height:92%;border-radius:20px 20px 0 0;border-width:1px 0 0;padding:8px 18px calc(18px + env(safe-area-inset-bottom,0px));gap:12px}
+  .m-box::before{content:"";display:block;flex:none;width:44px;height:5px;border-radius:3px;background:var(--line-2);margin:0 auto 4px}
+  .m-title{font-size:30px}
+  .stepper{grid-template-columns:60px 1fr 60px}
+  .stepper button{height:56px}
+  .stepper output{font-size:50px}
+  .m-box .fig-wrap{max-width:250px}
+  .m-actions .btn{padding:14px 16px;font-size:16px}
+  .m-actions .btn.primary{flex:2 1 auto}
 }
 @media (max-width:560px){
-  .tabs{grid-template-columns:repeat(2,1fr)}
-  .tab .key{display:none}
   .how{grid-template-columns:1fr}
   .classes{grid-template-columns:repeat(2,1fr)}
   .cls b{font-size:19px}
-  .who h1{font-size:28px}
-  .portrait{width:62px;height:62px}
-  .portrait span{font-size:32px}
   .clock{font-size:44px}
   .alarm{grid-template-columns:1fr}
 }
@@ -675,7 +764,7 @@ function bossNow(){const ws=weekStart();return {ws,b:BOSSES[((weekIndex(ws)%BOSS
 /* ================= Actions ================= */
 function addLog(entry){const p=P();p.log.push(Object.assign({t:Date.now(),d:today()},entry))}
 function afterGain(before,label,loot){const p=P();flyFrom=lastRect;toast(label);checkAch();save();renderAll();const aft=levelInfo(totalXP(p)).L;if(loot)setTimeout(()=>{showLoot(loot);checkAch();save()},CAN?650:0);if(aft>before)setTimeout(()=>queueModal(()=>levelUp(aft,before)),CAN?1100:0)}
-function logSet(ex,amt,src,ev){const p=P();autoFreeze(p);const before=levelInfo(totalXP(p)).L;const {xp}=calcXP(ex,amt,src);const prev=p.log.reduce((m,x)=>x.ex===ex&&x.amt>m?x.amt:m,0);addLog({ex,amt,xp,src,cat:EX[ex].cat,ev:ev||null});if(prev>0&&amt>prev){p.gold+=10;beep('done');burstAt(lastRect,30,170);toast(`Nytt personbästa! ${short(EX[ex].n)}: ${amt} ${EX[ex].unit==='sec'?'s':'st'} (förra ${prev}). +10 guld`,'ach')}afterGain(before,`+${xp} XP · ${short(EX[ex].n)}`,rollLoot('set'))}
+function logSet(ex,amt,src,ev){const p=P();vib(25);autoFreeze(p);const before=levelInfo(totalXP(p)).L;const {xp}=calcXP(ex,amt,src);const prev=p.log.reduce((m,x)=>x.ex===ex&&x.amt>m?x.amt:m,0);addLog({ex,amt,xp,src,cat:EX[ex].cat,ev:ev||null});if(prev>0&&amt>prev){p.gold+=10;beep('done');burstAt(lastRect,30,170);toast(`Nytt personbästa! ${short(EX[ex].n)}: ${amt} ${EX[ex].unit==='sec'?'s':'st'} (förra ${prev}). +10 guld`,'ach')}afterGain(before,`+${xp} XP · ${short(EX[ex].n)}`,rollLoot('set'))}
 function grant(xp,gold,src,label){const p=P();const before=levelInfo(totalXP(p)).L;if(xp)addLog({ex:null,amt:0,xp,src,cat:null});p.gold+=gold;afterGain(before,label,rollLoot(src))}
 
 /* ================= Motion ================= */
@@ -752,7 +841,7 @@ function showLoot(res){
   if(q==='common'||q==='uncommon'){toast(`Loot: ${it[1]} (${QN[q].toLowerCase()} ${SLOTN[it[2]]})`,'loot qc-'+q);burstAt(lastRect,18,110,[QCOL[q],'#fff1c2']);return}
   queueModal(()=>lootModal(it));
 }
-function lootModal(it){
+function lootModal(it){vib([20,40,60]);
   const q=it[3];beep(q==='legend'||q==='epic'?'lvl':'done');
   modal(`<div class="loot-reveal qc-${q}"><div class="loot-beam" aria-hidden="true"></div><p class="eyebrow">${q==='legend'?'Legendarisk loot!':q==='epic'?'Episk loot!':'Sällsynt loot!'}</p>
     <div class="loot-item">${preview(it,true)}</div>
@@ -788,17 +877,49 @@ function showReport(st){
 function sessionPanel(p){
   const se=p.session;
   if(se){const st=sessStats(p,se.start,Date.now(),se.raid);
-    return `<section class="panel session live" style="margin-bottom:18px"><div class="sess-main"><h2>${se.raid?'Raidkväll pågår':'Spelkväll pågår'}${se.raid?'<span class="raid-tag">+10 % XP · mer loot</span>':''}</h2>
-      <div class="sess-clock" id="sessClock">${fmtLong(Date.now()-se.start)}</div>
-      <div class="sess-stats"><span><b class="num">${st.sets}</b> set</span><span><b class="num">${st.xp}</b> XP</span><span><b class="num">${st.deaths}</b> dödsstraff</span><span><b class="num">${st.loot.length}</b> loot</span></div></div>
-      <div class="sess-actions"><button type="button" class="btn primary" data-act="endSession">Avsluta kvällen</button></div></section>`}
-  const hist=p.sessions.slice(0,3);
-  return `<section class="panel session" style="margin-bottom:18px"><div class="sess-main"><h2>Spelkväll</h2><p class="lead">Starta när du loggar in i WoW. Raidvarningen startar automatiskt och allt du gör samlas i en kvällsrapport när du loggar ut.</p></div>
-    <div class="sess-actions"><button type="button" class="btn primary" data-act="startSession">Starta spelkväll</button><button type="button" class="btn" data-act="startRaid">Starta raidkväll</button></div>
-    ${hist.length?`<ul class="sess-hist">${hist.map((h,i)=>`<li><button type="button" data-act="report" data-v="${i}"><span class="num">${dateSv(h.start)}</span><span><b>${h.raid?'Raidkväll':'Spelkväll'}</b> <small class="num">${hm(h.min)} · ${h.sets} set${h.record?' · rekord':''}</small></span><span class="num" style="color:var(--xp-2);font-weight:700">+${h.xp} XP</span></button></li>`).join('')}</ul>`:''}
+    return `<section class="panel session live" style="margin-bottom:14px"><div class="sess-live">
+      <div class="stack" style="gap:2px"><span class="sess-kind">${se.raid?'Raidkväll · +10 % xp':'Spelkväll'}</span><div class="sess-clock" id="sessClock">${fmtLong(Date.now()-se.start)}</div></div>
+      <div class="sess-stats"><span><b class="num">${st.sets}</b> set</span><span><b class="num">${st.xp}</b> XP</span><span><b class="num">${st.deaths}</b> döda</span><span><b class="num">${st.loot.length}</b> loot</span>${S.alarm.on?`<span>larm <b class="num" id="alarmMini">${alarmFiring?'nu':fmt(S.alarm.end-Date.now())}</b></span>`:''}</div>
+      <button type="button" class="btn" data-act="endSession">Avsluta</button></div></section>`}
+  const hist=p.sessions.slice(0,5);
+  return `<section class="panel session idle" style="margin-bottom:14px">
+    <div class="panel-head"><h2>Spelkväll</h2>${infoBtn}</div>
+    <p class="lead hint">Starta när du loggar in i WoW. Raidvarningen startar automatiskt och allt du gör samlas i en kvällsrapport när du avslutar. Raidkväll ger +10 % XP och mer loot.</p>
+    <div class="sess-cta"><button type="button" class="btn primary" data-act="startSession">${svg('spela','ic')} Starta spelkväll</button><button type="button" class="btn" data-act="startRaid">Raidkväll</button></div>
+    ${hist.length?`<details class="sess-old"><summary>Tidigare kvällar (${p.sessions.length})</summary><ul class="sess-hist">${hist.map((h,i)=>`<li><button type="button" data-act="report" data-v="${i}"><span class="num">${dateSv(h.start)}</span><span><b>${h.raid?'Raidkväll':'Spelkväll'}</b> <small class="num">${hm(h.min)} · ${h.sets} set${h.record?' · rekord':''}</small></span><span class="num" style="color:var(--xp-2);font-weight:700">+${h.xp} XP</span></button></li>`).join('')}</ul></details>`:''}
   </section>`;
 }
 function fmtLong(ms){const s=Math.max(0,Math.floor(ms/1000));return `${Math.floor(s/3600)}:${pad(Math.floor(s/60)%60)}:${pad(s%60)}`}
+
+/* ================= Ikoner ================= */
+const IC={
+  death:'<path d="M12 3a7 7 0 0 0-7 7c0 2.6 1.3 4.3 3 5.3V19h8v-3.7c1.7-1 3-2.7 3-5.3a7 7 0 0 0-7-7z"/><circle cx="9.5" cy="11" r="1.4"/><circle cx="14.5" cy="11" r="1.4"/><path d="M10.5 19v2M13.5 19v2"/>',
+  wipe:'<circle cx="6" cy="15" r="2.2"/><circle cx="12" cy="15" r="2.2"/><circle cx="18" cy="15" r="2.2"/><path d="M3 20h18M8 4l8 6M16 4l-8 6"/>',
+  load:'<path d="M6 3h12M6 21h12M7 3c0 6 10 6 10 9s-10 3-10 9M17 3c0 6-10 6-10 9s10 3 10 9"/>',
+  queue:'<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/>',
+  walk:'<path d="M12 21s-6-5.6-6-10a6 6 0 0 1 12 0c0 4.4-6 10-6 10z"/><circle cx="12" cy="11" r="2.2"/>',
+  ding:'<path d="M12 18V5M6.5 10.5 12 5l5.5 5.5M5 21h14"/>',
+  loot:'<path d="M6 4h12l3 5-9 11L3 9z"/><path d="M3 9h18M9.5 4 12 20l2.5-16"/>',
+  boss:'<path d="M3 18h18M4 18 3 8l5 4 4-7 4 7 5-4-1 10"/>',
+  afk:'<path d="M20 14.5A8 8 0 1 1 9.5 4a6.5 6.5 0 0 0 10.5 10.5z"/>',
+  star:'<path d="m12 3 2.7 5.6 6.1.9-4.4 4.3 1 6.1L12 17l-5.4 2.9 1-6.1-4.4-4.3 6.1-.9z"/>',
+  spela:'<rect x="2" y="7" width="20" height="11" rx="5.5"/><path d="M7 10v5M4.5 12.5h5"/><circle cx="16" cy="11.5" r="1"/><circle cx="18.5" cy="14" r="1"/>',
+  trana:'<path d="M6.5 7v10M17.5 7v10M3.5 9.5v5M20.5 9.5v5M6.5 12h11"/>',
+  uppdrag:'<path d="M5 4h11a2 2 0 0 1 2 2v12a2 2 0 0 0 2 2H7a2 2 0 0 1-2-2z"/><path d="M9 9h5M9 13h5"/>',
+  hjalte:'<path d="M12 3 20 6v6c0 5-3.5 8-8 9-4.5-1-8-4-8-9V6z"/><path d="m9 12 2 2 4-4"/>',
+  flame:'<path d="M12 21c4 0 7-2.6 7-6.5 0-3.6-2.6-5.6-3.6-8.6-1.4 1.4-2 3-2 4.6C13 8 10.6 5.5 10.6 3 6.8 5.6 5 9.6 5 14.5 5 18.4 8 21 12 21z"/>',
+  coin:'<circle cx="12" cy="12" r="8.5"/><path d="M14.5 9.2a3 3 0 0 0-2.5-1.2c-1.6 0-2.7.8-2.7 2s1.1 1.7 2.7 2 2.7.8 2.7 2-1.1 2-2.7 2a3 3 0 0 1-2.6-1.3M12 6.5v11"/>',
+  shield:'<path d="M12 3 20 6v6c0 5-3.5 8-8 9-4.5-1-8-4-8-9V6z"/>',
+  hand:'<path d="M8 13V5.5a1.5 1.5 0 0 1 3 0V11M11 10V4.5a1.5 1.5 0 0 1 3 0V11M14 10.5V6a1.5 1.5 0 0 1 3 0v7c0 4-2.5 7-6 7-2.4 0-3.8-1-5.2-3L4 14.3a1.5 1.5 0 0 1 2.4-1.8L8 14"/>'
+};
+const EVIC={death:'death',wipe:'wipe',load:'load',queue:'queue',walk:'walk',ding:'ding',loot:'loot',boss:'boss',afk:'afk'};
+const svg=(k,cls)=>`<svg class="${cls||''}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${IC[k]||IC.star}</svg>`;
+const infoBtn='<button type="button" class="info-btn" data-act="hint" aria-label="Visa förklaring">?</button>';
+const isMobile=()=>{try{return matchMedia('(max-width:820px)').matches}catch(e){return false}};
+const isSheet=()=>{try{return matchMedia('(max-width:640px)').matches}catch(e){return false}};
+S.fold=S.fold||{};
+const foldOpen=k=>S.fold[k]===undefined?!isMobile():S.fold[k];
+const vib=p=>{try{navigator.vibrate&&navigator.vibrate(p)}catch(e){}};
 
 /* ================= Övningsfigurer ================= */
 const GUIDE={
@@ -897,8 +1018,8 @@ function bagPanel(p){
   const group=(slot,label)=>`<div class="bag-group"><h3>${label}</h3><div class="bag">${LOOT.filter(x=>x[2]===slot).map(it=>{const has=!!p.inv[it[0]];const worn=slot==='title'?p.title===it[1]:p.look[slot]===it[0];
     return has?`<button type="button" class="item qc-${it[3]} ${worn?'worn':''}" data-act="${worn&&slot!=='title'?'unwear':'wear'}" data-v="${worn&&slot!=='title'?slot:it[0]}" aria-pressed="${worn}">${preview(it)}<span>${esc(it[1])}</span><small>${worn?'på':QN[it[3]]}</small></button>`
       :`<div class="item locked qc-${it[3]}" aria-label="Ej hittad, ${QN[it[3]]}">${preview(it)}<span>???</span><small>${QN[it[3]]}</small></div>`}).join('')}</div></div>`;
-  return `<section class="panel"><div class="panel-head"><h2>Väska</h2><span class="label num">${owned} / ${LOOT.length} samlade</span></div>
-    <p class="tip">Varje set har en chans att ge loot, och efter 7 set utan loot är du garanterad ett föremål. Dungeonkistor och veckobossar ger alltid loot. Raidkväll ger 50 % högre chans. Dubbletter säljs automatiskt för guld. Tryck på ett föremål för att ta på det.</p>
+  return `<section class="panel"><div class="panel-head"><h2>Väska</h2><div class="head-actions"><span class="label num">${owned} / ${LOOT.length}</span>${infoBtn}</div></div>
+    <p class="tip hint">Varje set har en chans att ge loot, och efter 7 set utan loot är du garanterad ett föremål. Dungeonkistor och veckobossar ger alltid loot. Raidkväll ger 50 % högre chans. Dubbletter säljs automatiskt för guld. Tryck på ett föremål för att ta på det.</p>
     ${group('frame','Porträttramar')}${group('banner','Fanor')}${group('title','Titlar')}
   </section>`;
 }
@@ -910,9 +1031,9 @@ function beep(kind){try{ensureAudio();if(!actx)return;const notes=kind==='alarm'
 
 /* ================= Modal / toast ================= */
 let pending=null;
-function modal(html,cls,redraw){const m=$('#modal');m.innerHTML=`<div class="m-box ${cls||''}" role="dialog" aria-modal="true">${html}</div>`;m.hidden=false;if(!redraw){A(m,{opacity:[0,1]},{duration:.22});A(m.firstElementChild,{opacity:[0,1],scale:[.9,1],y:[28,0]},{type:'spring',bounce:.32,duration:.55})}const f=m.querySelector('[data-autofocus]')||m.querySelector('.btn.primary');if(f&&!redraw)f.focus()}
-function closeModal(){const m=$('#modal');if(CAN&&!m.hidden&&m.firstElementChild){const g=m.cloneNode(true);g.removeAttribute('id');g.className='modal-ghost';g.setAttribute('aria-hidden','true');g.querySelectorAll('[id]').forEach(x=>x.removeAttribute('id'));document.body.appendChild(g);A(g,{opacity:[1,0]},{duration:.25});after(A(g.firstElementChild,{scale:[1,.94],y:[0,12]},{duration:.25,ease:EASE}),()=>g.remove())}m.hidden=true;m.innerHTML='';if(pending&&pending.timer)clearInterval(pending.timer.iv);pending=null;if(mq.length)setTimeout(()=>{if($('#modal').hidden&&mq.length)mq.shift()()},300)}
-function toast(msg,kind){const box=$('#toasts');while(box.children.length>=4)box.firstChild.remove();const t=document.createElement('div');t.className='toast '+(kind||'');t.textContent=msg;box.appendChild(t);if(CAN){A(t,{opacity:[0,1],x:[60,0],scale:[.9,1]},{type:'spring',bounce:.35,duration:.55});setTimeout(()=>after(A(t,{opacity:0,x:30,scale:.96},{duration:.3,ease:EASE}),()=>t.remove()),2900)}else setTimeout(()=>t.remove(),3300)}
+function modal(html,cls,redraw){const m=$('#modal');m.innerHTML=`<div class="m-box ${cls||''}" role="dialog" aria-modal="true">${html}</div>`;m.hidden=false;if(!redraw){A(m,{opacity:[0,1]},{duration:.22});if(isSheet())A(m.firstElementChild,{y:['100%','0%']},{type:'spring',bounce:.12,duration:.5});else A(m.firstElementChild,{opacity:[0,1],scale:[.9,1],y:[28,0]},{type:'spring',bounce:.32,duration:.55})}const f=m.querySelector('[data-autofocus]')||m.querySelector('.btn.primary');if(f&&!redraw)f.focus()}
+function closeModal(){const m=$('#modal');if(CAN&&!m.hidden&&m.firstElementChild){const g=m.cloneNode(true);g.removeAttribute('id');g.className='modal-ghost';g.setAttribute('aria-hidden','true');g.querySelectorAll('[id]').forEach(x=>x.removeAttribute('id'));document.body.appendChild(g);A(g,{opacity:[1,0]},{duration:.25});after(isSheet()?A(g.firstElementChild,{y:['0%','100%']},{duration:.28,ease:EASE}):A(g.firstElementChild,{scale:[1,.94],y:[0,12]},{duration:.25,ease:EASE}),()=>g.remove())}m.hidden=true;m.innerHTML='';if(pending&&pending.timer)clearInterval(pending.timer.iv);pending=null;if(mq.length)setTimeout(()=>{if($('#modal').hidden&&mq.length)mq.shift()()},300)}
+function toast(msg,kind){const box=$('#toasts');while(box.children.length>=(isMobile()?3:4))box.firstChild.remove();const t=document.createElement('div');t.className='toast '+(kind||'');t.textContent=msg;box.appendChild(t);if(CAN){A(t,{opacity:[0,1],x:[60,0],scale:[.9,1]},{type:'spring',bounce:.35,duration:.55});setTimeout(()=>after(A(t,{opacity:0,x:30,scale:.96},{duration:.3,ease:EASE}),()=>t.remove()),2900)}else setTimeout(()=>t.remove(),3300)}
 
 function openLog(ex,src,f,ctx){const t=target(ex,f||1);pending={ex,amt:t,src:src||'free',ctx:ctx||{},timer:null};drawLog()}
 function drawLog(redraw){
@@ -939,7 +1060,7 @@ function drawLog(redraw){
   if(redraw){A($('.stepper output'),{scale:[1.15,1]},{type:'spring',bounce:.5,duration:.4});A($('.xp-preview b'),{opacity:[.35,1],x:[-4,0]},{duration:.3})}
   else if(src==='alarm')A($('.m-box'),{x:[0,-12,12,-9,9,-5,5,0]},{duration:.6,delay:.2});
 }
-function levelUp(L,before){
+function levelUp(L,before){vib([30,60,30,60,80]);
   beep('lvl');const newRank=rankFor(L)!==rankFor(before);
   modal(`<div class="lvl"><p class="eyebrow">Ny nivå</p><div class="lvl-num num">${L}</div>
     <p>Övningarna blir lite tuffare, precis som monstren.</p>
@@ -953,11 +1074,12 @@ let alarmFiring=false,alarmBeeps=0,wakeLock=null;
 function armAlarm(){S.alarm.end=Date.now()+S.alarm.min*60000;alarmFiring=false;save()}
 function startAlarm(){ensureAudio();S.alarm.on=true;armAlarm();try{navigator.wakeLock&&navigator.wakeLock.request('screen').then(l=>wakeLock=l).catch(()=>{})}catch(e){}renderAll();toast(`Raidvarning om ${S.alarm.min} minuter`,'info')}
 function stopAlarm(){S.alarm.on=false;alarmFiring=false;save();try{wakeLock&&wakeLock.release()}catch(e){}wakeLock=null;renderAll()}
-function fireAlarm(){alarmFiring=true;alarmBeeps=1;beep('alarm');const ex=pick(pool());openLog(ex,'alarm',1,{title:'Raidvarning! Pausa när du kan och gör setet.',snooze:true,onDone:armAlarm,onCancel:armAlarm})}
+function fireAlarm(){alarmFiring=true;alarmBeeps=1;beep('alarm');vib([200,100,200]);const ex=pick(pool());openLog(ex,'alarm',1,{title:'Raidvarning! Pausa när du kan och gör setet.',snooze:true,onDone:armAlarm,onCancel:armAlarm})}
 function fmt(ms){const s=Math.max(0,Math.ceil(ms/1000));return `${Math.floor(s/60)}:${pad(s%60)}`}
 setInterval(()=>{
   if(!P())return;
   const sc=$('#sessClock');if(sc&&P().session)sc.textContent=fmtLong(Date.now()-P().session.start);
+  const am=$('#alarmMini');if(am&&S.alarm.on)am.textContent=alarmFiring?'nu':fmt(S.alarm.end-Date.now());
   const el=$('#alarmClock');
   if(S.alarm.on){
     const left=S.alarm.end-Date.now();
@@ -1012,21 +1134,21 @@ function renderFrame(p){
   return `<header class="frame"${bn?` style="background:${bn[4]}"`:''}>
     <div class="portrait ${fr?'q-'+fr[3]:''}"${fr?` style="--ring:${fr[4]};--glow:${fr[5]||'transparent'}"`:''} aria-hidden="true"><span>${esc((p.name||'?').trim().charAt(0).toUpperCase())}</span><div class="lvl-badge num">${li.L}</div></div>
     <div class="who">
-      <h1>${esc(p.name)}</h1>
+      <div class="who-top"><h1>${esc(p.name)}</h1>${rested?'<span class="rested-badge" title="Utvilad: dubbel XP på första setet">2× XP</span>':''}</div>
       <p class="sub"><b>${esc(title)}</b> · ${CLASSES[p.cls].n} · nivå ${li.L} · ${DIFF[p.diff].n}</p>
       <div class="xpbar ${rested?'rested':''}" role="progressbar" aria-valuemin="0" aria-valuemax="${li.need}" aria-valuenow="${li.into}" aria-label="Erfarenhet"><i style="width:${pct}%"></i></div>
       <div class="xpline num"><span>${li.need?`<span data-c="into">${li.into}</span> / ${li.need} XP till nivå ${li.L+1}`:'Maxnivå nådd'}</span>${rested?'<span class="rested-note">Utvilad: dubbel XP på första setet</span>':`<span><span data-c="xp">${xp}</span> XP totalt</span>`}</div>
     </div>
     <div class="chips">
-      <div class="chip streak"><span>Svit</span><b class="num">${st} ${st===1?'dag':'dagar'}</b></div>
-      <div class="chip gold"><span>Guld</span><b class="num" data-c="gold">${p.gold}</b></div>
-      <div class="chip"><span>Svitskydd</span><b class="num">${p.freezes}</b></div>
+      <div class="chip streak" title="Svit">${svg('flame','ic')}<span>Svit</span><b class="num">${st}<span class="unit"> ${st===1?'dag':'dagar'}</span></b></div>
+      <div class="chip gold" title="Guld">${svg('coin','ic')}<span>Guld</span><b class="num" data-c="gold">${p.gold}</b></div>
+      <div class="chip freeze" title="Svitskydd">${svg('shield','ic')}<span>Svitskydd</span><b class="num">${p.freezes}</b></div>
     </div>
   </header>`;
 }
 function renderTabs(){
   const T=[['spela','Spela','händelser och larm'],['trana','Träna','dungeon och fritt pass'],['uppdrag','Uppdrag','dagens och veckans'],['hjalte','Hjälte','egenskaper och duell']];
-  return `<nav class="tabs" role="tablist">${T.map(([k,n,s],i)=>`<button type="button" class="tab" role="tab" aria-selected="${S.tab===k}" data-act="tab" data-v="${k}"><span class="key">${i+1}</span><strong>${n}</strong><small>${s}</small></button>`).join('')}</nav>`;
+  return `<nav class="tabs" role="tablist">${T.map(([k,n,s],i)=>`<button type="button" class="tab" role="tab" aria-selected="${S.tab===k}" data-act="tab" data-v="${k}"><span class="key">${i+1}</span>${svg(k,'ti')}<strong>${n}</strong><small>${s}</small></button>`).join('')}</nav>`;
 }
 
 function renderLog(p){
@@ -1050,25 +1172,26 @@ function rulesEditor(p){
   <div class="row"><button type="button" class="btn small ghost" data-act="resetRules">Återställ standardregler</button></div>`;
 }
 function viewPlay(p){
-  const on=S.alarm.on;
+  const on=S.alarm.on;const tl=todayLog(p);const tSets=tl.filter(x=>x.ex).length,tXp=tl.reduce((a,x)=>a+x.xp,0);
   return sessionPanel(p)+`<div class="grid">
     <section class="panel">
-      <div class="panel-head"><h2>Spelhändelser</h2><button type="button" class="btn small ${editRules?'primary':'ghost'}" data-act="editRules">${editRules?'Klar':'Ändra regler'}</button></div>
-      ${editRules?rulesEditor(p):`<p class="lead">Ställ mobilen bredvid tangentbordet. När något av det här händer i spelet: tryck och gör övningen. Ger +50 % XP.</p>
-      <div class="events">${eventsFor(p).map(ev=>{const e=EX[ev.ex];return `<button type="button" class="ev" data-act="event" data-v="${ev.id}"><span class="ev-tag">${ev.tag}</span><span class="ev-n">${ev.n}</span><span class="ev-x"><b class="num">${target(ev.ex,ev.f)} ${e.unit==='sec'?'s':'st'}</b> ${esc(short(e.n).toLowerCase())}</span></button>`}).join('')}</div>`}
+      <div class="panel-head"><h2>Spelhändelser</h2><div class="head-actions">${editRules?'':infoBtn}<button type="button" class="btn small ${editRules?'primary':'ghost'}" data-act="editRules">${editRules?'Klar':'Ändra regler'}</button></div></div>
+      ${editRules?rulesEditor(p):`<p class="lead hint">Tryck när något händer i spelet och gör övningen direkt. Håll inne en ruta för att snabblogga utan att öppna den. Ger +50 % XP.</p>
+      <div class="events">${eventsFor(p).map(ev=>{const e=EX[ev.ex];const custom=!EVIC[ev.id];return `<button type="button" class="ev ${custom?'custom':''}" data-act="event" data-v="${ev.id}" title="${esc(ev.tag)}"><span class="ev-ic">${svg(EVIC[ev.id]||'star')}</span><span class="ev-amt"><b class="num">${target(ev.ex,ev.f)}</b>${e.unit==='sec'?'s ':''}${esc(short(e.n).toLowerCase())}</span><span class="ev-n">${esc(ev.n)}</span></button>`}).join('')}</div>`}
     </section>
     <div class="stack">
-      <section class="panel">
-        <div class="panel-head"><h2>Raidvarning</h2><span class="label">+50 % XP</span></div>
-        <p class="lead">Ett pausalarm medan du spelar. När det piper får du en slumpad övning.</p>
+      <details class="panel fold" data-fold="alarm"${foldOpen('alarm')?' open':''}>
+        <summary class="panel-head"><h2>Raidvarning</h2><span class="label">${on?'på · '+S.alarm.min+' min':'av'}</span></summary>
+        <p class="lead">Ett pausalarm medan du spelar. När det piper får du en slumpad övning som ger +50 % XP.</p>
         <div class="alarm"><div class="clock ${on?'on':''}" id="alarmClock">${on?(alarmFiring?'Nu!':fmt(S.alarm.end-Date.now())):fmt(S.alarm.min*60000)}</div>
           <div class="stack" style="gap:10px">
             <span class="label">intervall i minuter</span><div class="seg" role="group" aria-label="Intervall">${[15,20,30,45,60].map(m=>`<button type="button" data-act="alarmMin" data-v="${m}" aria-pressed="${S.alarm.min===m}" aria-label="${m} minuter">${m}</button>`).join('')}</div>
             <div class="row">${on?'<button type="button" class="btn" data-act="alarmStop">Stoppa</button><button type="button" class="btn ghost small" data-act="alarmNow">Testa nu</button>':'<button type="button" class="btn primary" data-act="alarmStart">Starta raidvarning</button>'}</div>
           </div></div>
-        <p class="tip">Ljudet hörs bäst om appen är öppen i en flik eller på mobilen.</p>
-      </section>
-      <section class="panel"><div class="panel-head"><h2>Idag</h2><span class="label num">${todayLog(p).filter(x=>x.ex).length} set</span></div>${renderLog(p)}</section>
+      </details>
+      <details class="panel fold" data-fold="idag"${foldOpen('idag')?' open':''}>
+        <summary class="panel-head"><h2>Idag</h2><span class="label num">${tSets} set · +${tXp} xp</span></summary>${renderLog(p)}
+      </details>
     </div>
   </div>`;
 }
@@ -1078,9 +1201,9 @@ function viewTrain(p){
   const dungeon=d?`<p class="dungeon-name">${esc(d.name)}</p>
     <ol class="rooms">${d.rooms.map((r,i)=>{const e=EX[r.ex];const st=i<d.i?'done':i===d.i?'cur':'';return `<li class="room ${st} ${r.boss?'boss':''}"><span class="ri num">${i<d.i?'✓':i+1}</span><div><div class="mob">${esc(r.mob)}${r.boss?' · boss':''}</div><div class="rx">${esc(e.n)}</div></div><span class="num">${target(r.ex,r.f)} ${e.unit==='sec'?'s':'st'}</span></li>`}).join('')}</ol>
     <div class="row"><button type="button" class="btn primary" data-act="room">${d.rooms[d.i].boss?'Möt bossen':'Gör rum '+(d.i+1)}</button><button type="button" class="btn ghost small" data-act="abandon">Ge upp rundan</button></div>`
-   :`<p class="lead">Fem rum: ett från varje kategori och en boss på slutet. Varje set ger +20 % XP och kistan i slutet ger 50 XP och 25 guld. Cirka 10 minuter.</p><div class="row"><button type="button" class="btn primary" data-act="dungeon">Gå in i en dungeon</button></div>`;
+   :`<p class="lead hint">Fem rum: ett från varje kategori och en boss på slutet. Varje set ger +20 % XP och kistan i slutet ger 50 XP och 25 guld. Cirka 10 minuter.</p><div class="row"><button type="button" class="btn primary" data-act="dungeon">Gå in i en dungeon</button></div>`;
   return `<div class="grid">
-    <section class="panel"><div class="panel-head"><h2>Dungeon-runda</h2><span class="label">5 rum</span></div>${dungeon}</section>
+    <section class="panel"><div class="panel-head"><h2>Dungeon-runda</h2><div class="head-actions"><span class="label">5 rum</span>${p.dungeon?'':infoBtn}</div></div>${dungeon}</section>
     <section class="panel"><div class="panel-head"><h2>Fritt pass</h2><span class="label">din nivå: ${DIFF[p.diff].n.toLowerCase()}</span></div>
       <div class="cats">${Object.entries(CATS).map(([c,ci])=>`<div><div class="cat-h"><span class="catdot" style="background:${ci.c}"></span><h3>${ci.n}</h3><span>${ci.s}</span></div>
         <div class="exlist">${pool(c).map(k=>{const e=EX[k];return `<button type="button" class="exbtn" data-act="ex" data-v="${k}"><span class="en">${esc(e.n)}</span><span class="ea num">${target(k)} ${e.unit==='sec'?'s':'st'}</span></button>`}).join('')}</div></div>`).join('')}</div>
@@ -1100,11 +1223,11 @@ function viewQuests(p){
         <div class="row" style="justify-content:space-between"><span class="tip num">${pr} / ${q.goal} · ${esc(q.hint)}</span>
         ${done?'<span class="label">inlämnat</span>':ready?`<button type="button" class="btn primary small" data-act="claim" data-v="${i}">Lämna in</button>`:q.ex?`<button type="button" class="btn small" data-act="ex" data-v="${q.ex}">Gör ett set</button>`:''}</div></div>`}).join('')}
     </section>
-    <section class="panel"><div class="panel-head"><h2>Veckans boss</h2><span class="label">${daysLeft} ${daysLeft===1?'dag':'dagar'} kvar</span></div>
+    <section class="panel"><div class="panel-head"><h2>Veckans boss</h2><span class="label">${daysLeft} ${daysLeft===1?'dag':'dagar'} kvar</span>${infoBtn}</div>
       <div class="boss"><div class="crest" aria-hidden="true">${b.n.charAt(0)}</div><div class="stack" style="gap:4px"><h3>${b.n}</h3><span class="bt">${b.t}</span></div></div>
       <p class="lore">${b.lore}</p>
       <div class="bar hp" role="progressbar" aria-valuemin="0" aria-valuemax="${BOSS_HP}" aria-valuenow="${hp}"><i style="width:${hp/BOSS_HP*100}%"></i><span class="num">${hp} / ${BOSS_HP} HP</span></div>
-      <p class="tip">All XP du tjänar den här veckan gör skada. Bossen byts varje måndag.</p>
+      <p class="tip hint">All XP du tjänar den här veckan gör skada. Bossen byts varje måndag.</p>
       ${killed?'<p class="m-ctx">Fälld! Ny boss på måndag.</p>':hp===0?'<div class="row"><button type="button" class="btn primary" data-act="bossClaim">Plundra bossen (+150 guld)</button></div>':''}
     </section>
   </div>`;
@@ -1167,12 +1290,12 @@ function viewHero(p){
   const rows=[{n:p.name,l:c.level,w:weekXP(p),s:c.streak,me:true,fresh:true}].concat(p.rivals.map(r=>({n:r.n,l:r.l,w:r.ws===weekStart()?r.w:0,s:r.s,old:r.ws!==weekStart(),at:r.at}))).sort((a,b)=>b.w-a.w);
   return progressPanel(p)+`<div class="grid">
     <div class="stack">
-      <section class="panel"><div class="panel-head"><h2>Egenskaper</h2><span class="label num">${c.sets} set totalt</span></div>
+      <section class="panel"><div class="panel-head"><h2>Egenskaper</h2><div class="head-actions"><span class="label num">${c.sets} set totalt</span>${infoBtn}</div></div>
         <div class="stats">${Object.entries(CATS).map(([k,ci])=>`<div class="stat"><span><span class="catdot" style="background:${ci.c}"></span>${ci.n}</span><div class="bar"><i style="width:${c.catxp[k]/maxCat*100}%;background:${ci.c}"></i></div><span class="v num">${10+Math.floor(c.catxp[k]/40)}</span></div>`).join('')}</div>
-        <p class="tip">Värdet växer med XP i varje kategori. Den kortaste stapeln visar vad du kan träna mer på.</p>
+        <p class="tip hint">Värdet växer med XP i varje kategori. Den kortaste stapeln visar vad du kan träna mer på.</p>
       </section>
-      <section class="panel"><div class="panel-head"><h2>Familjeduell</h2><span class="label">vecko-XP</span></div>
-        <p class="lead">Kopiera din kod och skicka till den du tävlar mot. Klistra in deras kod här. Koden visar läget när den kopierades.</p>
+      <section class="panel"><div class="panel-head"><h2>Familjeduell</h2><div class="head-actions"><span class="label">vecko-XP</span>${infoBtn}</div></div>
+        <p class="lead hint">Kopiera din kod och skicka till den du tävlar mot. Klistra in deras kod här. Koden visar läget när den kopierades.</p>
         <div class="tablewrap"><table class="duel"><thead><tr><th>Hjälte</th><th class="r">Nivå</th><th class="r">Svit</th><th class="r">Vecko-XP</th><th></th></tr></thead><tbody>
           ${rows.map(r=>`<tr class="${r.me?'me':''}"><td>${esc(r.n)}${r.old?' <small class="tip">(förra veckans kod)</small>':''}</td><td class="r num">${r.l}</td><td class="r num">${r.s}</td><td class="r num">${r.w}</td><td class="r">${r.me?'':`<button type="button" class="btn small ghost" data-act="rmRival" data-v="${esc(r.n)}" aria-label="Ta bort ${esc(r.n)}">×</button>`}</td></tr>`).join('')}
         </tbody></table></div>
@@ -1219,9 +1342,9 @@ document.addEventListener('click',ev=>{
     case 'tab':S.tab=v;confirmDelete=false;save();renderAll();window.scrollTo({top:0});break;
     case 'draftCls':draft.name=$('#c-name').value;draft.cls=v;renderAll();break;
     case 'draftDiff':draft.name=$('#c-name').value;draft.diff=v;renderAll();break;
-    case 'create':{const name=($('#c-name').value||'').trim();if(!name){toast('Ge hjälten ett namn först','info');$('#c-name').focus();return}const np=norm({name,cls:draft.cls,diff:draft.diff,equip:draft.equip.slice()});S.profiles[np.id]=np;S.active=np.id;S.tab='spela';draft={name:'',cls:'warrior',diff:'normal',equip:[]};save();renderAll();toast(`Välkommen, ${name}!`,'ach');break}
+    case 'create':{const name=($('#c-name').value||'').trim();if(!name){toast('Ge hjälten ett namn först','info');$('#c-name').focus();return}const np=norm({name,cls:draft.cls,diff:draft.diff,equip:draft.equip.slice()});S.profiles[np.id]=np;S.active=np.id;S.tab='spela';draft={name:'',cls:'warrior',diff:'normal',equip:[]};save();renderAll();toast(`Välkommen, ${name}!`,'ach');if(!S.introSeen)setTimeout(showIntro,CAN?500:0);break}
     case 'cancelCreate':S.active=S.active&&S.profiles[S.active]?S.active:Object.keys(S.profiles)[0];renderAll();break;
-    case 'event':{const e=eventsFor(p).find(x=>x.id===v);if(!e)return;openLog(e.ex,'event',e.f,{title:e.n,ev:e.id});break}
+    case 'event':{if(lpFired){lpFired=false;return}const e=eventsFor(p).find(x=>x.id===v);if(!e)return;openLog(e.ex,'event',e.f,{title:e.n,ev:e.id});break}
     case 'ex':openLog(v,'free',1,{});break;
     case 'amt':{const e=EX[pending.ex];const step=e.unit==='sec'?5:(pending.amt>=20?5:1);pending.amt=Math.max(e.unit==='sec'?5:1,pending.amt+step*Number(v));drawLog(true);break}
     case 'timer':{if(pending.timer)return;ensureAudio();const end=Date.now()+pending.amt*1000;const pd=pending;pd.timer={iv:setInterval(()=>{const left=Math.max(0,Math.ceil((end-Date.now())/1000));const t=$('#tmr');if(t)t.textContent=left>0?`${left} s kvar`:'Tiden är ute. Bra kämpat!';if(left<=0){clearInterval(pd.timer.iv);beep('done')}},250)};el.textContent='Timern går';break}
@@ -1250,6 +1373,8 @@ document.addEventListener('click',ev=>{
     case 'resetRules':p.evmap={};save();renderAll();toast('Standardreglerna är tillbaka','info');break;
     case 'addCustom':{const n=($('#newEvName').value||'').trim();if(!n){toast('Skriv vad som händer i spelet först','info');$('#newEvName').focus();return}if(p.customEvents.length>=12){toast('Max 12 egna händelser','info');return}p.customEvents.push({id:'c_'+uid(),n:n.slice(0,32),ex:$('#newEvEx').value});save();renderAll();toast(`Ny regel: ${n}`,'ach');break}
     case 'guide':{S.guideEx=v;save();const gv=$('#guideView');if(gv){gv.innerHTML=guideView(p);mountFigs(gv);all('.gchip').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.v===v)));A(gv,{opacity:[.3,1],y:[8,0]},{duration:.35,ease:EASE});if(innerWidth<=820)gv.scrollIntoView({behavior:RM?'auto':'smooth',block:'start'})}break}
+    case 'hint':{const pn=el.closest('.panel');if(pn){pn.classList.toggle('show-hint');const h=pn.querySelector('.hint');if(h&&pn.classList.contains('show-hint'))A(h,{opacity:[0,1],y:[-6,0]},{duration:.3,ease:EASE})}break}
+    case 'introDone':S.introSeen=true;save();closeModal();break;
     case 'rmCustom':p.customEvents=p.customEvents.filter(c=>c.id!==v);save();renderAll();break;
     case 'progRange':S.prog.range=Number(v);chartAnim=true;save();renderAll();break;
     case 'startSession':startSession(false);break;
@@ -1281,6 +1406,26 @@ document.addEventListener('keydown',ev=>{
   const tag=(ev.target.tagName||'').toLowerCase();if(tag==='input'||tag==='textarea'||tag==='select'||ev.ctrlKey||ev.metaKey||ev.altKey)return;
   const map={'1':'spela','2':'trana','3':'uppdrag','4':'hjalte'};if(map[ev.key]){S.tab=map[ev.key];save();renderAll()}
 });
+
+/* ================= Snabblogga, fällbara paneler, svep ================= */
+let lp=null,lpFired=false,lpEl=null,lpXY=null;
+function quickLog(id,el){const p=P();const e=eventsFor(p).find(x=>x.id===id);if(!e)return;lpFired=true;el.classList.remove('holding');lastRect=el.getBoundingClientRect();burstAt(lastRect,16,90);logSet(e.ex,target(e.ex,e.f),'event',e.id)}
+document.addEventListener('pointerdown',ev=>{const t=ev.target.closest&&ev.target.closest('.ev[data-act="event"]');if(!t)return;lpFired=false;lpEl=t;lpXY=[ev.clientX,ev.clientY];t.classList.add('holding');clearTimeout(lp);lp=setTimeout(()=>{if(lpEl===t)quickLog(t.dataset.v,t)},550)});
+const lpCancel=()=>{clearTimeout(lp);if(lpEl)lpEl.classList.remove('holding');lpEl=null};
+document.addEventListener('pointerup',lpCancel);document.addEventListener('pointercancel',lpCancel);
+document.addEventListener('pointermove',ev=>{if(lpEl&&lpXY&&Math.hypot(ev.clientX-lpXY[0],ev.clientY-lpXY[1])>12)lpCancel()});
+document.addEventListener('contextmenu',ev=>{if(ev.target.closest&&ev.target.closest('.ev'))ev.preventDefault()});
+document.addEventListener('toggle',ev=>{const d=ev.target;if(d&&d.dataset&&d.dataset.fold){S.fold[d.dataset.fold]=d.open;save()}},true);
+let drag=null;
+document.addEventListener('pointerdown',ev=>{const box=ev.target.closest&&ev.target.closest('#modal .m-box');if(!box||!isSheet())return;const r=box.getBoundingClientRect();if(ev.clientY-r.top>44||ev.target.closest('button,input,select,textarea,summary'))return;drag={box,y0:ev.clientY,dy:0};box.style.transition='none'});
+document.addEventListener('pointermove',ev=>{if(!drag)return;drag.dy=Math.max(0,ev.clientY-drag.y0);drag.box.style.transform=`translateY(${drag.dy}px)`});
+const dragEnd=()=>{if(!drag)return;const d=drag;drag=null;if(d.dy>90){const c=pending&&pending.ctx.onCancel;d.box.style.transform='';closeModal();c&&c()}else{d.box.style.transition='transform .2s ease';d.box.style.transform=''}};
+document.addEventListener('pointerup',dragEnd);document.addEventListener('pointercancel',dragEnd);
+function showIntro(){modal(`<div class="intro"><p class="label">så funkar det</p><h2 class="m-title">Tre saker</h2><ol>
+  <li><span>${svg('spela')}</span><div><b>Starta en spelkväll</b><small>När du loggar in i WoW. Raidvarningen startar av sig själv.</small></div></li>
+  <li><span>${svg('hand')}</span><div><b>Tryck när något händer</b><small>Dog du? Tryck på rutan och gör övningen. Håll inne för att snabblogga.</small></div></li>
+  <li><span>${svg('loot')}</span><div><b>Samla XP och loot</b><small>Gå upp i nivå, fäll veckans boss och avsluta kvällen för en rapport.</small></div></li>
+</ol><div class="m-actions"><button type="button" class="btn primary" data-act="introDone">Kör!</button></div></div>`);if(CAN)A(all('.intro li'),{opacity:[0,1],x:[-14,0]},{duration:.4,delay:stg(.1,{startDelay:.15}),ease:EASE})}
 
 /* ================= Boot ================= */
 if(S.active&&!S.profiles[S.active])S.active=Object.keys(S.profiles)[0]||null;
