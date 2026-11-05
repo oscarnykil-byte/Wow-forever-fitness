@@ -204,7 +204,7 @@ textarea{min-height:76px;font-size:13px;font-family:ui-monospace,SFMono-Regular,
 .how{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
 .how div{border-top:2px solid var(--gold-dim);padding-top:10px;font-size:15px;color:var(--muted)}
 .how b{display:block;color:var(--fg);font-size:16px;margin-bottom:2px}
-.classes{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.classes{display:grid;grid-template-columns:repeat(auto-fill,minmax(170px,1fr));gap:8px}
 .cls{text-align:left;background:var(--panel-2);border:1px solid var(--line);border-radius:12px;padding:12px;cursor:pointer;display:flex;flex-direction:column;gap:2px}
 .cls b{font-family:var(--f-display);font-weight:500;font-size:22px;line-height:1.1}
 .cls small{color:var(--muted);font-size:13px}
@@ -257,6 +257,7 @@ textarea{min-height:76px;font-size:13px;font-family:ui-monospace,SFMono-Regular,
   .tab .key{display:none}
   .how{grid-template-columns:1fr}
   .classes{grid-template-columns:repeat(2,1fr)}
+  .cls b{font-size:19px}
   .who h1{font-size:28px}
   .portrait{width:62px;height:62px}
   .portrait span{font-size:32px}
@@ -301,7 +302,7 @@ const EX={
   superman:{n:'Superman',cat:'core',unit:'reps',base:12,w:.8,tip:'Ligg på mage, lyft armar och ben samtidigt.'},
   hollow:{n:'Hollow hold',cat:'core',unit:'sec',base:20,w:1.2,tip:'Ländryggen i golvet, armar och ben lyfta.'},
   twist:{n:'Rysk twist',cat:'core',unit:'reps',base:20,w:.9},
-  jacks:{n:'Hampelmän',cat:'cardio',unit:'reps',base:25,w:.8},
+  jacks:{n:'Jumping jacks',cat:'cardio',unit:'reps',base:25,w:.8,tip:'Hoppa isär med benen och klappa händerna ovanför huvudet, hoppa ihop igen. Kallas även hampelmanshopp.'},
   burpee:{n:'Burpees',cat:'cardio',unit:'reps',base:8,w:1.6,tip:'Ner, ut, in, upp, hopp. Ta det i din takt.'},
   climber:{n:'Mountain climbers',cat:'cardio',unit:'reps',base:20,w:1.1,tip:'Räkna varje knä.'},
   knees:{n:'Höga knän',cat:'cardio',unit:'sec',base:30,w:1},
@@ -309,13 +310,21 @@ const EX={
   shadow:{n:'Skuggboxning',cat:'cardio',unit:'sec',base:45,w:.9}
 };
 const CLASSES={
-  krigare:{n:'Krigare',d:'+25 % XP på styrka',bonus:{str:.25}},
-  jagare:{n:'Jägare',d:'+25 % XP på benkraft',bonus:{leg:.25}},
-  smygare:{n:'Smygare',d:'+25 % XP på kondition',bonus:{cardio:.25}},
-  munk:{n:'Munk',d:'+25 % XP på bål',bonus:{core:.25}},
-  paladin:{n:'Paladin',d:'+12 % på styrka och bål',bonus:{str:.12,core:.12}},
-  druid:{n:'Druid',d:'+8 % XP på allt',bonus:{str:.08,leg:.08,core:.08,cardio:.08}}
+  warrior:{n:'Warrior',d:'+25 % XP på styrka',bonus:{str:.25}},
+  paladin:{n:'Paladin',d:'+12 % XP på styrka och bål',bonus:{str:.12,core:.12}},
+  hunter:{n:'Hunter',d:'+25 % XP på benkraft',bonus:{leg:.25}},
+  rogue:{n:'Rogue',d:'+25 % XP på kondition',bonus:{cardio:.25}},
+  priest:{n:'Priest',d:'Utvilad ger ×2,5 i stället för ×2',rested:2.5},
+  shaman:{n:'Shaman',d:'+12 % XP på styrka och kondition',bonus:{str:.12,cardio:.12}},
+  mage:{n:'Mage',d:'+20 % XP på tidsövningar (planka m.fl.)',sec:.2},
+  warlock:{n:'Warlock',d:'+25 % XP på raidvarningar',src:{alarm:.25}},
+  monk:{n:'Monk',d:'+25 % XP på bål',bonus:{core:.25}},
+  druid:{n:'Druid',d:'+8 % XP på allt',bonus:{str:.08,leg:.08,core:.08,cardio:.08}},
+  demonhunter:{n:'Demon Hunter',d:'+12 % XP på benkraft och kondition',bonus:{leg:.12,cardio:.12}},
+  deathknight:{n:'Death Knight',d:'+25 % XP på spelhändelser',src:{event:.25}},
+  evoker:{n:'Evoker',d:'+25 % XP i dungeon-rundor',src:{dungeon:.25}}
 };
+const OLD_CLS={krigare:'warrior',jagare:'hunter',smygare:'rogue',munk:'monk'};
 const DIFF={easy:{n:'Lätt',m:.6,d:'Färre reps. Bra start eller för yngre hjältar.'},normal:{n:'Normal',m:1,d:'Lagom för de flesta vuxna.'},hard:{n:'Hård',m:1.4,d:'För dig som redan tränar.'}};
 const EVENTS=[
   {id:'death',n:'Jag dog',tag:'Dödsstraff',ex:'burpee',f:.6},
@@ -382,7 +391,7 @@ let S=loadState();
 S.alarm=S.alarm||{on:false,min:30,end:0};
 function save(){try{localStorage.setItem(LS,JSON.stringify(S))}catch(e){}}
 const uid=()=>Math.random().toString(36).slice(2,10);
-function norm(p){return Object.assign({id:uid(),name:'Hjälte',cls:'krigare',diff:'normal',equip:[],log:[],gold:0,freezes:0,frozen:[],ach:{},titles:[],title:'',qcache:null,qclaimed:{},bossKills:{},dungeon:null,rivals:[],created:Date.now()},p||{})}
+function norm(p){p=p||{};if(OLD_CLS[p.cls])p.cls=OLD_CLS[p.cls];if(!CLASSES[p.cls])p.cls='warrior';return Object.assign({id:uid(),name:'Hjälte',cls:'warrior',diff:'normal',equip:[],log:[],gold:0,freezes:0,frozen:[],ach:{},titles:[],title:'',qcache:null,qclaimed:{},bossKills:{},dungeon:null,rivals:[],created:Date.now()},p)}
 Object.keys(S.profiles).forEach(k=>S.profiles[k]=norm(S.profiles[k]));
 const P=()=>S.profiles[S.active];
 
@@ -418,8 +427,9 @@ function autoFreeze(p){const s=activeDays(p);const y=addDays(today(),-1),yy=addD
 const isRested=p=>!todayLog(p).some(x=>x.ex);
 function calcXP(ex,amt,src){
   const p=P(),e=EX[ex];const ratio=Math.min(2,amt/target(ex));const mults=[];
-  if(isRested(p))mults.push(['Utvilad',2]);
-  const cb=CLASSES[p.cls].bonus[e.cat];if(cb)mults.push([CLASSES[p.cls].n,1+cb]);
+  const C=CLASSES[p.cls];
+  if(isRested(p))mults.push(['Utvilad',C.rested||2]);
+  const cb=((C.bonus||{})[e.cat]||0)+(e.unit==='sec'?(C.sec||0):0)+((C.src||{})[src]||0);if(cb)mults.push([C.n,+(1+cb).toFixed(2)]);
   if(src==='event')mults.push(['Spelhändelse',1.5]);
   if(src==='alarm')mults.push(['Raidvarning',1.5]);
   if(src==='dungeon')mults.push(['Dungeon',1.2]);
@@ -531,7 +541,7 @@ function doRoom(){const d=P().dungeon;const r=d.rooms[d.i];openLog(r.ex,'dungeon
 function advanceDungeon(){const p=P();const d=p.dungeon;if(!d)return;d.i++;if(d.i>=d.rooms.length){p.dungeon=null;grant(50,25,'chest','Kistan öppnad! +50 XP, +25 guld')}else{save();renderAll()}}
 
 /* ================= Render ================= */
-let draft={name:'',cls:'krigare',diff:'normal',equip:[]};
+let draft={name:'',cls:'warrior',diff:'normal',equip:[]};
 let confirmDelete=false;
 function renderAll(){const app=$('#app');if(!P()){app.innerHTML=renderCreate();return}const p=P();app.innerHTML=renderFrame(p)+renderTabs()+`<main>${({spela:viewPlay,trana:viewTrain,uppdrag:viewQuests,hjalte:viewHero}[S.tab]||viewPlay)(p)}</main>`}
 
@@ -548,7 +558,7 @@ function renderCreate(){
     <section class="panel">
       <div class="panel-head"><h2>Skapa din hjälte</h2>${has?'<button type="button" class="btn small ghost" data-act="cancelCreate">Tillbaka</button>':''}</div>
       <label class="field"><span>Namn</span><input type="text" id="c-name" maxlength="24" placeholder="t.ex. Oscar eller Pappa Björn" value="${esc(draft.name)}" autocomplete="off"></label>
-      <div class="field"><span>Klass ger extra XP på sin favoritkategori</span><div class="classes">
+      <div class="field"><span>Välj samma klass som din main i WoW. Varje klass har sin egen XP-bonus.</span><div class="classes">
         ${Object.entries(CLASSES).map(([k,c])=>`<button type="button" class="cls" data-act="draftCls" data-v="${k}" aria-pressed="${draft.cls===k}"><b>${c.n}</b><small>${c.d}</small></button>`).join('')}
       </div></div>
       <div class="field"><span>Svårighet</span><div class="seg" role="group">${Object.entries(DIFF).map(([k,d])=>`<button type="button" data-act="draftDiff" data-v="${k}" aria-pressed="${draft.diff===k}">${d.n}</button>`).join('')}</div><small class="tip">${DIFF[draft.diff].d} XP räknas mot din egen nivå, så duellen blir rättvis.</small></div>
@@ -713,7 +723,7 @@ document.addEventListener('click',ev=>{
     case 'tab':S.tab=v;confirmDelete=false;save();renderAll();window.scrollTo({top:0});break;
     case 'draftCls':draft.name=$('#c-name').value;draft.cls=v;renderAll();break;
     case 'draftDiff':draft.name=$('#c-name').value;draft.diff=v;renderAll();break;
-    case 'create':{const name=($('#c-name').value||'').trim();if(!name){toast('Ge hjälten ett namn först','info');$('#c-name').focus();return}const np=norm({name,cls:draft.cls,diff:draft.diff,equip:draft.equip.slice()});S.profiles[np.id]=np;S.active=np.id;S.tab='spela';draft={name:'',cls:'krigare',diff:'normal',equip:[]};save();renderAll();toast(`Välkommen, ${name}!`,'ach');break}
+    case 'create':{const name=($('#c-name').value||'').trim();if(!name){toast('Ge hjälten ett namn först','info');$('#c-name').focus();return}const np=norm({name,cls:draft.cls,diff:draft.diff,equip:draft.equip.slice()});S.profiles[np.id]=np;S.active=np.id;S.tab='spela';draft={name:'',cls:'warrior',diff:'normal',equip:[]};save();renderAll();toast(`Välkommen, ${name}!`,'ach');break}
     case 'cancelCreate':S.active=S.active&&S.profiles[S.active]?S.active:Object.keys(S.profiles)[0];renderAll();break;
     case 'event':{const e=EVENTS.find(x=>x.id===v);openLog(e.ex,'event',e.f,{title:e.n,ev:e.id});break}
     case 'ex':openLog(v,'free',1,{});break;
