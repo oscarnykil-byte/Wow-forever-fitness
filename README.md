@@ -13,6 +13,7 @@ Du samlar XP, går upp i nivå (1–60), håller svitten vid liv och fäller vec
 - **Framsteg**: XP per dag, bästa set per övning och personbästa (+10 guld när du slår rekord).
 - **Spelkväll och raidkväll**: starta när du loggar in, raidvarningen startar automatiskt och du får en kvällsrapport när du avslutar.
 - **Loot**: slumpade porträttramar, fanor och titlar i fem sällsyntheter, samlade i en väska.
+- **Övningsguide**: animerad figur och instruktioner (utförande, vanligt fel, lättare variant) för alla 26 övningar, både i guiden och när du loggar ett set.
 - **Familjeduell** via kod, och säkerhetskopia för att flytta en hjälte mellan enheter.
 
 Framstegen sparas i webbläsaren på varje enhet. Använd säkerhetskopian under fliken Hjälte

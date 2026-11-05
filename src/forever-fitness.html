@@ -282,6 +282,36 @@ details.pbs .tablewrap{margin-top:8px}
 .toast.loot{border-color:var(--qc);color:var(--qc)}
 @media (max-width:640px){.session{grid-template-columns:1fr}.sess-actions{flex-direction:row;flex-wrap:wrap}.rgrid{grid-template-columns:repeat(2,1fr)}}
 
+/* Exercise figures */
+.fig{display:block;width:100%;height:auto;overflow:visible}
+.fig .fl{fill:none;stroke:var(--fg);stroke-width:6;stroke-linecap:round;stroke-linejoin:round}
+.fig .fl.torso{stroke-width:7}
+.fig .fl.far{stroke:var(--muted);opacity:.55}
+.fig .fh{fill:var(--fg)}
+.fig .fg-line{stroke:var(--line-2);stroke-width:2}
+.fig .fp{fill:var(--gold);stroke:var(--gold);stroke-width:2;stroke-linecap:round}
+.fig .fp-line{fill:none;stroke:var(--gold);stroke-width:2.5;stroke-linecap:round}
+.fig .fp-static{fill:var(--panel-2);stroke:var(--line-2);stroke-width:2}
+.fig .ghost .fl,.fig .ghost .fh{stroke:var(--faint);fill:none;opacity:.6}
+.fig .ghost .fh{fill:var(--faint)}
+.fig-wrap{background:radial-gradient(120% 100% at 50% 100%,#1b1f30,#0e1018);border:1px solid var(--line);border-radius:12px;padding:6px 10px 2px;max-width:340px;width:100%;align-self:center}
+details.howto{border:1px solid var(--line);border-radius:10px;padding:8px 12px;background:#0e1018}
+details.howto summary{cursor:pointer;font-weight:800;color:var(--gold);font-size:15px}
+.howto-body{display:flex;flex-direction:column;gap:8px;margin-top:8px;font-size:15px}
+.howto-body ol{margin:0;padding-left:1.3em;display:flex;flex-direction:column;gap:4px}
+.howto-body p{color:var(--muted);font-size:14px}
+.howto-body p b{color:var(--fg)}
+.guide-grid{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.1fr);gap:20px;align-items:start}
+.guide-list{display:flex;flex-direction:column;gap:12px}
+.guide-chips{display:flex;flex-wrap:wrap;gap:6px}
+.gchip{border:1px solid var(--line-2);background:var(--panel-2);border-radius:999px;padding:6px 12px;font-size:14px;font-weight:700;cursor:pointer}
+.gchip[aria-pressed="true"]{background:var(--gold);color:var(--gold-ink);border-color:var(--gold)}
+.gchip.need{color:var(--muted)}
+.guide-view{display:flex;flex-direction:column;gap:12px;min-width:0}
+.guide-view .fig-wrap{max-width:none}
+.guide-view h3{font-family:var(--f-display);font-weight:700;font-size:30px;line-height:1}
+@media (max-width:820px){.guide-grid{grid-template-columns:1fr}.guide-view{order:-1}}
+
 /* Create */
 .create{max-width:760px;margin:0 auto;display:flex;flex-direction:column;gap:22px;width:100%}
 .create-hero{display:flex;flex-direction:column;gap:10px;padding-top:12px}
@@ -744,6 +774,97 @@ function sessionPanel(p){
 }
 function fmtLong(ms){const s=Math.max(0,Math.floor(ms/1000));return `${Math.floor(s/3600)}:${pad(Math.floor(s/60)%60)}:${pad(s%60)}`}
 
+/* ================= Övningsfigurer ================= */
+const GUIDE={
+  pushup:{s:['Händerna lite bredare än axlarna, kroppen rak som en planka.','Sänk bröstet mot golvet med armbågarna snett bakåt.','Pressa upp tills armarna är raka.'],f:'Rumpan hänger ner eller sticker upp.',e:'Gör dem mot en bordskant eller på knäna.'},
+  dips:{s:['Händerna på stolskanten, fingrarna framåt.','Sänk kroppen tills armbågarna är i ungefär 90 grader.','Pressa upp igen.'],f:'Axlarna åker upp mot öronen.',e:'Böj benen mer och ha fötterna närmare stolen.'},
+  pike:{s:['Stå som ett upp-och-ner-V med rumpan högt.','Böj armarna och för huvudet mot golvet framför händerna.','Pressa tillbaka upp.'],f:'Höfterna sjunker så det blir en vanlig armhävning.',e:'Gå bara halvvägs ner.'},
+  rowdb:{s:['Fäll överkroppen framåt med rak rygg, stöd ena handen på knät.','Dra vikten mot höften med armbågen nära kroppen.','Sänk långsamt.'],f:'Rund rygg eller att rycka med hela kroppen.',e:'Använd en lättare vikt eller en vattenflaska.'},
+  pressdb:{s:['Stå stadigt med vikterna vid axlarna.','Pressa rakt upp tills armarna är sträckta.','Sänk kontrollerat tillbaka.'],f:'Att svanka med ländryggen.',e:'Gör den sittande eller en arm i taget.'},
+  bandrow:{s:['Fäst bandet i något stadigt framför dig.','Dra händerna mot magen och kläm ihop skulderbladen.','Släpp tillbaka långsamt.'],f:'Att dra upp axlarna mot öronen.',e:'Gå närmare fästet så bandet blir slakare.'},
+  pullapart:{s:['Håll bandet med raka armar framför bröstet.','Dra isär tills bandet når bröstet.','Gå långsamt tillbaka.'],f:'Att böja armarna mycket.',e:'Håll ett bredare grepp om bandet.'},
+  squat:{s:['Fötterna axelbrett, tårna lite utåt.','Sätt dig bakåt som på en osynlig stol, bröstet upp.','Pressa upp genom hälarna.'],f:'Knäna faller inåt eller hälarna lyfter.',e:'Sätt dig på en stol och res dig igen.'},
+  lunge:{s:['Ta ett långt kliv framåt.','Sänk bakre knät mot golvet, främre knät ovanför foten.','Pressa tillbaka och byt ben.'],f:'Främre knät går långt förbi tårna.',e:'Håll i en stol för balansen.'},
+  bridge:{s:['Ligg på rygg med fötterna i golvet nära rumpan.','Pressa upp höften tills kroppen är rak från knä till axel.','Kläm ihop rumpan en sekund och sänk.'],f:'Att svanka med ryggen i stället för att använda rumpan.',e:'Gör en mindre rörelse.'},
+  wallsit:{s:['Ryggen mot väggen, glid ner tills knäna är i 90 grader.','Knäna ovanför fötterna.','Andas lugnt och håll.'],f:'Att trycka med händerna på låren.',e:'Stå lite högre upp mot väggen.'},
+  jumpsquat:{s:['Gör en knäböj.','Explodera uppåt och hoppa.','Landa mjukt och gå direkt ner i nästa.'],f:'Att landa på raka ben.',e:'Gör vanliga knäböj och gå upp på tå.'},
+  goblet:{s:['Håll vikten mot bröstet med båda händerna.','Sätt dig djupt med rak rygg.','Pressa upp genom hälarna.'],f:'Att luta sig för långt framåt.',e:'Lättare vikt eller vanliga knäböj.'},
+  swing:{s:['Fötterna lite bredare än axlarna, vikten mellan benen.','Fäll i höften och svinga upp vikten med en kraftig höftrörelse.','Armarna följer bara med, höften gör jobbet.'],f:'Att lyfta med armarna eller runda ryggen.',e:'Lättare vikt och lägre sving.'},
+  plank:{s:['Underarmarna i golvet, armbågarna under axlarna.','Kroppen rak från huvud till häl.','Spänn magen och rumpan, andas.'],f:'Rumpan hänger ner eller sticker upp.',e:'Gör den med knäna i golvet.'},
+  sideplank:{s:['Ligg på sidan med underarmen under axeln.','Lyft höften så kroppen blir rak.','Håll, byt sedan sida.'],f:'Höften sjunker ner.',e:'Ha nedre knät i golvet.'},
+  situp:{s:['Ligg på rygg med böjda knän.','Rulla upp mot knäna med magmusklerna.','Sänk långsamt tillbaka.'],f:'Att dra i nacken med händerna.',e:'Lyft bara axlarna en bit (crunch).'},
+  superman:{s:['Ligg på magen med armarna framåt.','Lyft armar, bröst och ben samtidigt.','Håll en sekund och sänk.'],f:'Att kasta huvudet bakåt.',e:'Lyft bara armarna eller bara benen.'},
+  hollow:{s:['Ligg på rygg och pressa ländryggen mot golvet.','Lyft armar och ben en bit från golvet.','Håll formen och andas.'],f:'Att ländryggen släpper från golvet.',e:'Böj knäna och ha armarna längs sidorna.'},
+  twist:{s:['Sitt med böjda knän och luta dig lite bakåt.','Vrid överkroppen från sida till sida.','Nudda golvet bredvid höften på varje sida.'],f:'Att bara röra armarna utan att vrida.',e:'Ha fötterna kvar i golvet.'},
+  jacks:{s:['Stå med fötterna ihop.','Hoppa isär med benen och för armarna över huvudet.','Hoppa tillbaka.'],f:'Att landa tungt på hälarna.',e:'Kliv ut åt sidan i stället för att hoppa.'},
+  burpee:{s:['Sätt dig ner och sätt händerna i golvet.','Hoppa ut bakåt till en planka och sedan tillbaka in.','Res dig och hoppa upp.'],f:'Att rumpan hänger i plankan.',e:'Kliv bakåt i stället för att hoppa och skippa hoppet.'},
+  climber:{s:['Stå i armhävningsposition.','Dra knäna mot bröstet ett i taget.','Håll höften låg och stilla.'],f:'Att rumpan åker upp.',e:'Gör det långsamt, ett knä i taget.'},
+  knees:{s:['Spring på stället.','Lyft knäna till höfthöjd.','Pumpa med armarna.'],f:'Att luta sig bakåt.',e:'Gå på stället med höga knän.'},
+  rope:{s:['Håll handtagen vid höfterna.','Snurra repet med handlederna, inte armarna.','Små hopp på framfoten.'],f:'Att hoppa för högt.',e:'Hoppa utan rep och låtsas.'},
+  shadow:{s:['Ena foten framför den andra, händerna vid hakan.','Slå raka slag omväxlande med höger och vänster.','Dra tillbaka handen till hakan efter varje slag.'],f:'Att låsa armbågarna hårt i slaget.',e:'Slå långsammare.'}
+};
+const FIG={
+  squat:{b:'ffdd',dur:1,k:[{hip:[100,76],t:180,l:[97,128],r:[103,128],la:{a:[82,90]},ra:{a:[90,90]}},{hip:[82,100],t:145,l:[97,128],r:[103,128],la:{a:[95,95]},ra:{a:[100,95]}}]},
+  lunge:{b:'dfbb',dur:1.1,k:[{hip:[98,77],t:180,l:[74,128],r:[122,128],la:{h:[2,-2]},ra:{h:[6,-2]}},{hip:[97,101],t:181,l:[74,128],r:[122,128],la:{h:[2,-2]},ra:{h:[6,-2]}}]},
+  bridge:{b:'uudd',dur:1.2,k:[{hip:[95,121],t:-88,l:[124,128],r:[128,128],la:{a:[88,88]},ra:{a:[88,88]}},{hip:[94,103],t:-62,l:[124,128],r:[128,128],la:{a:[92,90]},ra:{a:[92,90]}}]},
+  wallsit:{b:'uudd',dur:2,prop:'wall',k:[{hip:[86,101],t:180,l:[110,128],r:[114,128],la:{h:[20,-4]},ra:{h:[24,-4]}},{hip:[86,102],t:178,l:[110,128],r:[114,128],la:{h:[20,-3]},ra:{h:[24,-3]}}]},
+  jumpsquat:{b:'ffdd',dur:.45,k:[{hip:[100,76],t:180,l:[97,128],r:[103,128],la:{a:[-10,-5]},ra:{a:[-5,0]}},{hip:[84,100],t:145,l:[97,128],r:[103,128],la:{a:[-40,-30]},ra:{a:[-35,-25]}},{hip:[100,60],t:182,l:[98,112],r:[102,114],la:{a:[170,175]},ra:{a:[175,178]}},{hip:[84,100],t:145,l:[97,128],r:[103,128],la:{a:[-40,-30]},ra:{a:[-35,-25]}}]},
+  goblet:{b:'ffdd',dur:1.1,prop:'kb2',k:[{hip:[100,76],t:180,l:[97,128],r:[103,128],la:{n:[9,12]},ra:{n:[11,12]}},{hip:[82,100],t:148,l:[97,128],r:[103,128],la:{n:[9,12]},ra:{n:[11,12]}}]},
+  swing:{b:'ffff',dur:.7,prop:'kb2',k:[{hip:[90,82],t:128,l:[98,128],r:[102,128],la:{a:[-15,-15]},ra:{a:[-12,-12]}},{hip:[100,76],t:180,l:[98,128],r:[102,128],la:{a:[95,95]},ra:{a:[95,95]}}]},
+  plank:{b:'ddff',dur:2,k:[{hip:[100,107],t:-92,l:[147,128],r:[150,128],la:[44,128],ra:[46,128]},{hip:[100,105],t:-93,l:[147,128],r:[150,128],la:[44,128],ra:[46,128]}]},
+  sideplank:{b:'ddfu',dur:1.6,k:[{hip:[100,110],t:-94,l:[147,128],r:[150,128],la:[44,128],ra:{a:[180,180]}},{hip:[100,102],t:-90,l:[147,128],r:[150,128],la:[44,128],ra:{a:[180,180]}}]},
+  situp:{b:'uudd',dur:1,k:[{hip:[100,120],t:-90,l:[128,128],r:[131,128],la:{n:[6,-4]},ra:{n:[8,-3]}},{hip:[100,120],t:-200,l:[128,128],r:[131,128],la:{n:[6,-4]},ra:{n:[8,-3]}}]},
+  superman:{b:'dddd',dur:1.2,k:[{hip:[96,123],t:90,l:{a:[-90,-90]},r:{a:[-90,-90]},la:{a:[90,90]},ra:{a:[90,90]}},{hip:[96,123],t:100,l:{a:[-102,-104]},r:{a:[-100,-102]},la:{a:[106,108]},ra:{a:[104,106]}}]},
+  hollow:{b:'dduu',dur:2,k:[{hip:[104,122],t:-100,l:{a:[97,95]},r:{a:[99,97]},la:{a:[-120,-118]},ra:{a:[-118,-116]}},{hip:[104,123],t:-103,l:{a:[100,98]},r:{a:[102,100]},la:{a:[-124,-122]},ra:{a:[-122,-120]}}]},
+  twist:{b:'uudd',dur:.8,k:[{hip:[100,120],t:-152,l:{a:[125,72]},r:{a:[128,75]},la:{h:[16,-16]},ra:{h:[18,-15]}},{hip:[100,120],t:-147,l:{a:[125,72]},r:{a:[128,75]},la:{h:[-4,-26]},ra:{h:[-2,-25]}}]},
+  jacks:{front:1,b:'oooo',dur:.45,k:[{hip:[100,78],t:180,l:[91,128],r:[109,128],la:{a:[-12,-8]},ra:{a:[12,8]}},{hip:[100,72],t:180,l:[74,124],r:[126,124],la:{a:[-160,-170]},ra:{a:[160,170]}}]},
+  burpee:{b:'ffbb',dur:[.45,.4,.4,.45,.45],k:[{hip:[100,76],t:180,l:[97,128],r:[103,128],la:{a:[-5,0]},ra:{a:[5,0]}},{hip:[96,106],t:115,l:[97,128],r:[103,128],la:[119,128],ra:[122,128]},{hip:[84,108],t:114,l:[36,128],r:[40,128],la:[119,128],ra:[122,128]},{hip:[96,106],t:115,l:[97,128],r:[103,128],la:[119,128],ra:[122,128]},{hip:[100,60],t:182,l:[98,112],r:[102,114],la:{a:[172,176]},ra:{a:[176,178]}}]},
+  climber:{b:'ffbb',dur:.35,k:[{hip:[84,106],t:112,l:[36,128],r:[90,124],la:[119,128],ra:[122,128]},{hip:[84,106],t:112,l:[90,124],r:[36,128],la:[119,128],ra:[122,128]}]},
+  knees:{b:'ffdd',dur:.32,k:[{hip:[100,75],t:180,l:[98,128],r:{a:[90,0]},la:{a:[40,140]},ra:{a:[-35,-10]}},{hip:[100,75],t:180,l:{a:[90,0]},r:[98,128],la:{a:[-35,-10]},ra:{a:[40,140]}}]},
+  rope:{front:1,b:'oooo',dur:.32,prop:'rope',k:[{hip:[100,76],t:180,l:[96,128],r:[104,128],la:{n:[-20,30]},ra:{n:[20,30]},rope:152},{hip:[100,70],t:180,l:[96,122],r:[104,122],la:{n:[-20,30]},ra:{n:[20,30]},rope:-12}]},
+  shadow:{b:'ffdd',dur:.35,k:[{hip:[98,78],t:178,l:[86,128],r:[112,128],la:{a:[30,160]},ra:{a:[90,90]}},{hip:[100,78],t:183,l:[86,128],r:[112,128],la:{a:[90,90]},ra:{a:[30,160]}}]},
+  pushup:{b:'ddbb',dur:.9,k:[{hip:[84,108],t:114,l:[36,128],r:[40,128],la:[119,128],ra:[122,128]},{hip:[86,118],t:100,l:[36,128],r:[40,128],la:[119,128],ra:[122,128]}]},
+  dips:{b:'uubb',dur:1,prop:'chair',k:[{hip:[96,98],t:180,l:[134,128],r:[138,128],la:[86,96],ra:[88,96]},{hip:[96,116],t:181,l:[134,128],r:[138,128],la:[86,96],ra:[88,96]}]},
+  pike:{b:'ddbb',dur:1,k:[{hip:[94,82],t:48,l:[70,128],r:[73,128],la:[127,128],ra:[130,128]},{hip:[96,90],t:38,l:[70,128],r:[73,128],la:[127,128],ra:[130,128]}]},
+  rowdb:{b:'ffdu',dur:.9,prop:'db1',k:[{hip:[90,80],t:112,l:[98,128],r:[103,128],la:[110,104],ra:{a:[0,0]}},{hip:[90,80],t:112,l:[98,128],r:[103,128],la:[110,104],ra:{n:[-12,14]}}]},
+  pressdb:{b:'ffdd',dur:1,prop:'db2',k:[{hip:[100,76],t:180,l:[96,128],r:[103,128],la:{n:[6,-2]},ra:{n:[9,-1]}},{hip:[100,76],t:180,l:[96,128],r:[103,128],la:{n:[3,-37]},ra:{n:[5,-37]}}]},
+  bandrow:{b:'ffdd',dur:1,prop:'anchor',k:[{hip:[92,78],t:176,l:[90,128],r:[98,128],la:{n:[37,8]},ra:{n:[38,10]}},{hip:[92,78],t:178,l:[90,128],r:[98,128],la:{n:[4,16]},ra:{n:[6,17]}}]},
+  pullapart:{front:1,b:'oooo',dur:1,prop:'band2',k:[{hip:[100,76],t:180,l:[94,128],r:[106,128],la:{n:[-7,8]},ra:{n:[7,8]}},{hip:[100,76],t:180,l:[94,128],r:[106,128],la:{n:[-40,4]},ra:{n:[40,4]}}]}
+};
+const D2R=Math.PI/180,dirv=a=>[Math.sin(a*D2R),Math.cos(a*D2R)];
+const LIMBS=['l','r','la','ra'],LEN={l:[26,26],r:[26,26],la:[20,19],ra:[20,19]};
+function figRoots(def,hip,t){const d=dirv(t),neck=[hip[0]+d[0]*38,hip[1]+d[1]*38];const fr=def.front;return {neck,roots:{l:fr?[hip[0]-6,hip[1]]:hip,r:fr?[hip[0]+6,hip[1]]:hip,la:fr?[neck[0]-11,neck[1]+3]:[neck[0],neck[1]+2],ra:fr?[neck[0]+11,neck[1]+3]:[neck[0],neck[1]+2]}}}
+function figResolve(def,kf){const {neck,roots}=figRoots(def,kf.hip,kf.t);const tg={};LIMBS.forEach(k=>{const sp=kf[k];if(Array.isArray(sp))tg[k]=sp.slice();else if(sp.h)tg[k]=[kf.hip[0]+sp.h[0],kf.hip[1]+sp.h[1]];else if(sp.n)tg[k]=[neck[0]+sp.n[0],neck[1]+sp.n[1]];else{const d1=dirv(sp.a[0]),d2=dirv(sp.a[1]),r=roots[k],L=LEN[k];tg[k]=[r[0]+d1[0]*L[0]+d2[0]*L[1],r[1]+d1[1]*L[0]+d2[1]*L[1]]}});return {hip:kf.hip.slice(),t:kf.t,tg,rope:kf.rope||0}}
+function figLerp(A,B,u){const m=(a,b)=>a+(b-a)*u;const tg={};LIMBS.forEach(k=>{tg[k]=[m(A.tg[k][0],B.tg[k][0]),m(A.tg[k][1],B.tg[k][1])]});return {hip:[m(A.hip[0],B.hip[0]),m(A.hip[1],B.hip[1])],t:m(A.t,B.t),tg,rope:m(A.rope,B.rope)}}
+function ik(root,tg,L1,L2,bend,cx){let dx=tg[0]-root[0],dy=tg[1]-root[1];let d=Math.hypot(dx,dy)||.001;const mx=(L1+L2)*.999;if(d>mx){dx*=mx/d;dy*=mx/d;d=mx}const a=Math.atan2(dy,dx),c=Math.acos(Math.max(-1,Math.min(1,(L1*L1+d*d-L2*L2)/(2*L1*d))));const j1=[root[0]+Math.cos(a+c)*L1,root[1]+Math.sin(a+c)*L1],j2=[root[0]+Math.cos(a-c)*L1,root[1]+Math.sin(a-c)*L1];let first=true;
+  if(bend==='f')first=j1[0]>=j2[0];else if(bend==='b')first=j1[0]<=j2[0];else if(bend==='u')first=j1[1]<=j2[1];else if(bend==='d')first=j1[1]>=j2[1];else if(bend==='o')first=Math.abs(j1[0]-cx)>=Math.abs(j2[0]-cx);
+  return [first?j1:j2,[root[0]+dx,root[1]+dy]]}
+function figPose(def,P){const {neck,roots}=figRoots(def,P.hip,P.t);const d=dirv(P.t);const head=[neck[0]+d[0]*11,neck[1]+d[1]*11];const limbs={};LIMBS.forEach((k,i)=>{const [j,e]=ik(roots[k],P.tg[k],LEN[k][0],LEN[k][1],def.b[i],P.hip[0]);limbs[k]=[roots[k],j,e]});return {neck,head,limbs,hip:P.hip,rope:P.rope}}
+const pts=a=>a.map(p=>p[0].toFixed(1)+','+p[1].toFixed(1)).join(' ');
+function figSkel(cls){return `<g class="${cls}"><polyline class="fl far" data-k="l"></polyline><polyline class="fl far" data-k="la"></polyline><polyline class="fl torso"></polyline><circle class="fh" r="8"></circle><polyline class="fl" data-k="r"></polyline><g class="fp-dyn"></g><polyline class="fl" data-k="ra"></polyline></g>`}
+function figStatic(def){if(def.prop==='wall')return '<rect class="fp-static" x="66" y="8" width="12" height="123"></rect>';if(def.prop==='chair')return '<rect class="fp-static" x="46" y="96" width="44" height="6" rx="2"></rect><line class="fg-line" x1="50" y1="102" x2="50" y2="131" style="stroke-width:3"></line><line class="fg-line" x1="86" y1="102" x2="86" y2="131" style="stroke-width:3"></line><line class="fg-line" x1="48" y1="96" x2="48" y2="58" style="stroke-width:3"></line>';if(def.prop==='anchor')return '<rect class="fp-static" x="180" y="20" width="8" height="111"></rect>';return ''}
+function figProps(def,F){const h1=F.limbs.la[2],h2=F.limbs.ra[2];const db=h=>`<line class="fp" x1="${h[0]-6}" y1="${h[1]}" x2="${h[0]+6}" y2="${h[1]}" style="stroke-width:3"></line><rect class="fp" x="${h[0]-8}" y="${h[1]-4}" width="4" height="8" rx="1"></rect><rect class="fp" x="${h[0]+4}" y="${h[1]-4}" width="4" height="8" rx="1"></rect>`;
+  switch(def.prop){case 'db1':return db(h2);case 'db2':return db(h1)+db(h2);case 'kb2':{const c=[(h1[0]+h2[0])/2,(h1[1]+h2[1])/2+8];return `<circle class="fp" cx="${c[0]}" cy="${c[1]}" r="7"></circle><path class="fp-line" d="M${c[0]-4},${c[1]-5} Q${c[0]},${c[1]-13} ${c[0]+4},${c[1]-5}"></path>`}
+    case 'band2':return `<line class="fp-line" x1="${h1[0]}" y1="${h1[1]}" x2="${h2[0]}" y2="${h2[1]}" style="stroke:var(--q-uncommon)"></line>`;
+    case 'anchor':{const c=[(h1[0]+h2[0])/2,(h1[1]+h2[1])/2];return `<line class="fp-line" x1="180" y1="52" x2="${c[0]}" y2="${c[1]}" style="stroke:var(--q-uncommon)"></line>`}
+    case 'rope':{const c=F.rope;return `<path class="fp-line" d="M${h1[0]},${h1[1]} C${h1[0]-10},${c} ${h2[0]+10},${c} ${h2[0]},${h2[1]}"></path>`}}return ''}
+function figDraw(g,def,P){const F=figPose(def,P);LIMBS.forEach(k=>{const el=g.querySelector(`[data-k="${k}"]`);if(el)el.setAttribute('points',pts(F.limbs[k]))});g.querySelector('.torso').setAttribute('points',pts(def.front?[[F.hip[0]-6,F.hip[1]],[F.hip[0]+6,F.hip[1]],F.hip,F.neck,[F.neck[0]-11,F.neck[1]+3],[F.neck[0]+11,F.neck[1]+3],F.neck]:[F.hip,F.neck]));const hd=g.querySelector('.fh');hd.setAttribute('cx',F.head[0].toFixed(1));hd.setAttribute('cy',F.head[1].toFixed(1));const pd=g.querySelector('.fp-dyn');if(pd)pd.innerHTML=figProps(def,F)}
+function mountFig(el){const ex=el.dataset.fig,def=FIG[ex];if(!def||el.dataset.mounted)return;el.dataset.mounted='1';
+  el.innerHTML=`<svg class="fig" viewBox="0 0 200 140" role="img" aria-label="Animation: ${esc(EX[ex].n)}"><line class="fg-line" x1="4" y1="131" x2="196" y2="131"></line>${figStatic(def)}${RM?figSkel('ghost'):''}${figSkel('main')}</svg>`;
+  const K=def.k.map(k=>figResolve(def,k)),n=K.length;const durs=K.map((_,i)=>Array.isArray(def.dur)?def.dur[i%def.dur.length]:def.dur);const total=durs.reduce((a,b)=>a+b,0);const g=el.querySelector('.main');
+  if(RM){figDraw(g,def,K[0]);figDraw(el.querySelector('.ghost'),def,K[Math.min(1,n-1)]);return}
+  const at=time=>{let t=((time%total)+total)%total,i=0;while(i<n-1&&t>durs[i]){t-=durs[i];i++}const u=t/durs[i];figDraw(g,def,figLerp(K[i],K[(i+1)%n],.5-.5*Math.cos(Math.PI*u)))};
+  at(0);
+  if(CAN){let c=null;c=MO.animate(0,total,{duration:total,repeat:Infinity,ease:'linear',onUpdate:v=>{if(!el.isConnected){c&&c.stop();return}at(v)}})}
+  else{const t0=performance.now();const loop=now=>{if(!el.isConnected)return;at((now-t0)/1000);requestAnimationFrame(loop)};requestAnimationFrame(loop)}}
+function mountFigs(root){(root||document).querySelectorAll('[data-fig]').forEach(mountFig)}
+function howto(ex,open){const g=GUIDE[ex];if(!g)return '';return `<details class="howto"${open?' open':''}><summary>Så gör du</summary><div class="howto-body"><ol>${g.s.map(x=>`<li>${esc(x)}</li>`).join('')}</ol><p><b>Vanligt fel:</b> ${esc(g.f)}</p><p><b>Lättare:</b> ${esc(g.e)}</p>${EX[ex].tip?`<p><b>Tips:</b> ${esc(EX[ex].tip)}</p>`:''}</div></details>`}
+S.guideEx=S.guideEx||'squat';
+function guideView(p){const ex=S.guideEx,e=EX[ex],avail=pool().includes(ex);return `<div class="fig-wrap" data-fig="${ex}"></div><h3>${esc(e.n)}</h3><span class="label"><span class="catdot" style="background:${CATS[e.cat].c}"></span>${CATS[e.cat].n} · ${target(ex)} ${e.unit==='sec'?'sekunder':'st'} för dig${e.eq?' · kräver '+e.eq.map(q=>EQUIP[q].toLowerCase()).join(' eller '):''}</span>${howto(ex,true)}<div class="row">${avail?`<button type="button" class="btn primary" data-act="ex" data-v="${ex}">Gör ett set</button>`:'<span class="tip">Kryssa i redskapet under Hjälte för att kunna logga den.</span>'}</div>`}
+function guidePanel(p){const pl=pool();return `<section class="panel" style="margin-top:18px"><div class="panel-head"><h2>Övningsguide</h2><span class="label">${Object.keys(EX).length} övningar</span></div>
+  <div class="guide-grid"><div class="guide-list">${Object.entries(CATS).map(([c,ci])=>`<div><div class="cat-h"><span class="catdot" style="background:${ci.c}"></span><h3>${ci.n}</h3></div><div class="guide-chips">${Object.keys(EX).filter(k=>EX[k].cat===c).map(k=>`<button type="button" class="gchip ${pl.includes(k)?'':'need'}" data-act="guide" data-v="${k}" aria-pressed="${S.guideEx===k}">${esc(short(EX[k].n))}</button>`).join('')}</div></div>`).join('')}</div>
+  <div class="guide-view" id="guideView">${guideView(p)}</div></div></section>`}
+
 /* ================= Bag ================= */
 function bagPanel(p){
   const owned=Object.keys(p.inv).length;
@@ -774,19 +895,21 @@ function drawLog(redraw){
     <div class="m-head"><span class="q q-${q}">${QN[q]}</span><span class="label"><span class="catdot" style="background:${CATS[e.cat].c}"></span>${CATS[e.cat].n}</span></div>
     ${ctx.title?`<p class="m-ctx">${esc(ctx.title)}</p>`:''}
     <h2 class="m-title">${esc(e.n)}</h2>
+    <div class="fig-wrap" data-fig="${ex}"></div>
     <div class="stepper">
       <button type="button" data-act="amt" data-v="-1" aria-label="Minska">−</button>
       <output class="num" aria-live="polite">${amt}<small>${e.unit==='sec'?'sekunder':'st'}</small></output>
       <button type="button" data-act="amt" data-v="1" aria-label="Öka">+</button>
     </div>
     ${e.unit==='sec'?`<button type="button" class="btn" data-act="timer">${pending.timer?'Timern går':'Starta timer'}</button><div class="timer num" id="tmr"></div>`:''}
-    ${e.tip?`<p class="tip">${esc(e.tip)}</p>`:''}
+    ${howto(ex,pending.howOpen)}
     <div class="xp-preview"><b class="num">+${xp} XP</b><span>${mults.length?mults.map(m=>`${esc(m[0])} ×${m[1]}`).join(' · '):'Inga bonusar just nu'}</span></div>
     <div class="m-actions">
       ${ctx.snooze?'<button type="button" class="btn ghost" data-act="snooze">Om 5 min</button>':''}
       <button type="button" class="btn" data-act="cancel">${ctx.snooze?'Hoppa över':'Avbryt'}</button>
       <button type="button" class="btn primary" data-act="done">Klart!</button>
     </div>`, src==='alarm'?'alarm-box':'',redraw);
+  mountFigs($('#modal'));const hd=$('#modal details.howto');if(hd)hd.addEventListener('toggle',()=>{if(pending)pending.howOpen=hd.open});
   if(redraw){A($('.stepper output'),{scale:[1.15,1]},{type:'spring',bounce:.5,duration:.4});A($('.xp-preview b'),{opacity:[.35,1],x:[-4,0]},{duration:.3})}
   else if(src==='alarm')A($('.m-box'),{x:[0,-12,12,-9,9,-5,5,0]},{duration:.6,delay:.2});
 }
@@ -826,7 +949,7 @@ function advanceDungeon(){const p=P();const d=p.dungeon;if(!d)return;d.i++;if(d.
 /* ================= Render ================= */
 let draft={name:'',cls:'warrior',diff:'normal',equip:[]};
 let confirmDelete=false;
-function renderAll(){const app=$('#app');if(!P()){app.innerHTML=renderCreate();return}const p=P();app.innerHTML=renderFrame(p)+renderTabs()+`<main>${({spela:viewPlay,trana:viewTrain,uppdrag:viewQuests,hjalte:viewHero}[S.tab]||viewPlay)(p)}</main>`;$('#tip').hidden=true;fxAfter(p);if(S.tab==='hjalte')drawCharts()}
+function renderAll(){const app=$('#app');if(!P()){app.innerHTML=renderCreate();return}const p=P();app.innerHTML=renderFrame(p)+renderTabs()+`<main>${({spela:viewPlay,trana:viewTrain,uppdrag:viewQuests,hjalte:viewHero}[S.tab]||viewPlay)(p)}</main>`;$('#tip').hidden=true;mountFigs(app);fxAfter(p);if(S.tab==='hjalte')drawCharts()}
 
 function renderCreate(){
   const has=Object.keys(S.profiles).length>0;
@@ -936,7 +1059,7 @@ function viewTrain(p){
       <div class="cats">${Object.entries(CATS).map(([c,ci])=>`<div><div class="cat-h"><span class="catdot" style="background:${ci.c}"></span><h3>${ci.n}</h3><span>${ci.s}</span></div>
         <div class="exlist">${pool(c).map(k=>{const e=EX[k];return `<button type="button" class="exbtn" data-act="ex" data-v="${k}"><span class="en">${esc(e.n)}</span><span class="ea num">${target(k)} ${e.unit==='sec'?'s':'st'}</span></button>`}).join('')}</div></div>`).join('')}</div>
     </section>
-  </div>`;
+  </div>`+guidePanel(p);
 }
 
 function viewQuests(p){
@@ -1097,6 +1220,7 @@ document.addEventListener('click',ev=>{
     case 'editRules':editRules=!editRules;save();renderAll();break;
     case 'resetRules':p.evmap={};save();renderAll();toast('Standardreglerna är tillbaka','info');break;
     case 'addCustom':{const n=($('#newEvName').value||'').trim();if(!n){toast('Skriv vad som händer i spelet först','info');$('#newEvName').focus();return}if(p.customEvents.length>=12){toast('Max 12 egna händelser','info');return}p.customEvents.push({id:'c_'+uid(),n:n.slice(0,32),ex:$('#newEvEx').value});save();renderAll();toast(`Ny regel: ${n}`,'ach');break}
+    case 'guide':{S.guideEx=v;save();const gv=$('#guideView');if(gv){gv.innerHTML=guideView(p);mountFigs(gv);all('.gchip').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.v===v)));A(gv,{opacity:[.3,1],y:[8,0]},{duration:.35,ease:EASE});if(innerWidth<=820)gv.scrollIntoView({behavior:RM?'auto':'smooth',block:'start'})}break}
     case 'rmCustom':p.customEvents=p.customEvents.filter(c=>c.id!==v);save();renderAll();break;
     case 'progRange':S.prog.range=Number(v);chartAnim=true;save();renderAll();break;
     case 'startSession':startSession(false);break;
