@@ -1,0 +1,773 @@
+<!doctype html>
+<html lang="sv">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+</head>
+<body>
+<title>Forever Fitness</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Grenze+Gotisch:wght@500;700&family=Alegreya+Sans:wght@400;500;700;800&family=Alegreya+Sans+SC:wght@500;700&display=swap">
+<style>
+/* Layout: MMO-gränssnitt – en "unit frame" överst, actionbar-flikar med snabbtangenter 1–4, paneler som sidor i en questlogg */
+:root{
+  --bg:#10121a; --bg-glow:#1d1b33; --panel:#191c29; --panel-2:#222739; --line:#323850; --line-2:#454c68;
+  --fg:#ece6d6; --muted:#a0a3b6; --faint:#6f7389;
+  --gold:#e6b04a; --gold-ink:#1b1408; --gold-dim:#7d6029;
+  --xp:#8e63f0; --xp-2:#b493ff; --hp:#d9483b; --hp-2:#f07a5c; --ok:#45c06a;
+  --q-common:#bdbdbd; --q-uncommon:#45c06a; --q-rare:#4d8ff5; --q-epic:#b06df5; --q-legend:#f08a2c;
+  --c-str:#e0794a; --c-leg:#4d8ff5; --c-core:#45c06a; --c-cardio:#e6c14a;
+  --f-display:"Grenze Gotisch",Georgia,"Times New Roman",serif;
+  --f-body:"Alegreya Sans",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --f-label:"Alegreya Sans SC","Alegreya Sans",system-ui,sans-serif;
+  color-scheme:dark;
+}
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+html,body{min-height:100%}
+body{margin:0;background:var(--bg);background-image:radial-gradient(1200px 500px at 50% -120px,var(--bg-glow),transparent 70%);background-repeat:no-repeat;color:var(--fg);font-family:var(--f-body);font-size:16px;line-height:1.45;-webkit-font-smoothing:antialiased}
+#app{max-width:1040px;margin:0 auto;padding-block:20px 64px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));display:flex;flex-direction:column;gap:18px}
+h1,h2,h3{margin:0;text-wrap:balance}
+p{margin:0}
+button{font:inherit;color:inherit}
+:focus-visible{outline:2px solid var(--gold);outline-offset:2px}
+.num{font-variant-numeric:tabular-nums}
+.label{font-family:var(--f-label);font-size:13px;letter-spacing:.06em;color:var(--muted);text-transform:lowercase}
+
+/* ---------- Unit frame ---------- */
+.frame{display:grid;grid-template-columns:auto 1fr auto;gap:18px;align-items:center;background:linear-gradient(180deg,var(--panel-2),var(--panel));border:1px solid var(--line);border-radius:14px;padding:16px 18px}
+.portrait{position:relative;width:76px;height:76px;border-radius:50%;display:grid;place-items:center;background:radial-gradient(circle at 35% 30%,#3a3150,#16141f);border:3px solid var(--gold);box-shadow:0 0 0 3px var(--bg),0 0 0 4px var(--gold-dim)}
+.portrait span{font-family:var(--f-display);font-size:40px;line-height:1;color:var(--gold);transform:translateY(-2px)}
+.portrait .lvl-badge{position:absolute;bottom:-8px;left:50%;transform:translateX(-50%);background:var(--gold);color:var(--gold-ink);font-weight:800;font-size:13px;min-width:30px;text-align:center;padding:1px 7px;border-radius:999px;border:2px solid var(--bg)}
+.who{min-width:0;display:flex;flex-direction:column;gap:6px}
+.who h1{font-family:var(--f-display);font-weight:700;font-size:34px;line-height:1;letter-spacing:.01em}
+.who .sub{color:var(--muted);font-size:15px}
+.who .sub b{color:var(--gold);font-weight:700}
+.xpbar{position:relative;height:16px;border-radius:999px;background:#0b0c12;border:1px solid var(--line-2);overflow:hidden}
+.xpbar i{position:absolute;inset:0 auto 0 0;background:linear-gradient(180deg,var(--xp-2),var(--xp));border-radius:999px;transition:width .6s ease}
+.xpbar::after{content:"";position:absolute;inset:0;background:repeating-linear-gradient(90deg,transparent 0 calc(5% - 1px),rgba(0,0,0,.45) calc(5% - 1px) 5%)}
+.xpbar.rested i{box-shadow:inset 0 0 0 1px rgba(255,255,255,.15)}
+.xpline{display:flex;justify-content:space-between;gap:10px;font-size:13px;color:var(--muted)}
+.chips{display:flex;flex-direction:column;gap:8px;align-items:stretch}
+.chip{display:flex;align-items:center;gap:8px;justify-content:space-between;background:#0e1018;border:1px solid var(--line);border-radius:10px;padding:6px 10px;font-size:14px;white-space:nowrap}
+.chip b{font-size:17px}
+.chip.streak b{color:var(--q-legend)}
+.chip.gold b{color:var(--gold)}
+.rested-note{font-size:13px;color:var(--xp-2)}
+
+/* ---------- Action bar tabs ---------- */
+.tabs{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
+.tab{position:relative;display:flex;flex-direction:column;align-items:flex-start;gap:2px;background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:10px 12px 10px 14px;cursor:pointer;text-align:left;transition:border-color .15s,background .15s}
+.tab:hover{border-color:var(--line-2);background:var(--panel-2)}
+.tab[aria-selected="true"]{border-color:var(--gold);background:linear-gradient(180deg,#2a2618,var(--panel))}
+.tab .key{position:absolute;top:6px;right:9px;font-size:12px;color:var(--faint);font-weight:700}
+.tab strong{font-family:var(--f-display);font-size:22px;font-weight:500;line-height:1.1}
+.tab small{color:var(--muted);font-size:13px}
+.tab[aria-selected="true"] strong{color:var(--gold)}
+
+/* ---------- Panels ---------- */
+.grid{display:grid;grid-template-columns:1.25fr 1fr;gap:18px;align-items:start}
+.grid > *{min-width:0}
+.stack{display:flex;flex-direction:column;gap:18px;min-width:0}
+.panel{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:18px;display:flex;flex-direction:column;gap:14px;min-width:0}
+.panel-head{display:flex;justify-content:space-between;align-items:baseline;gap:12px;flex-wrap:wrap}
+.panel-head h2{font-family:var(--f-display);font-weight:500;font-size:26px;line-height:1.1;color:var(--gold)}
+.panel .lead{color:var(--muted);font-size:15px;max-width:62ch}
+
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;border:1px solid var(--line-2);background:var(--panel-2);border-radius:10px;padding:10px 16px;cursor:pointer;font-weight:700;font-size:15px;transition:transform .08s,background .15s,border-color .15s}
+.btn:hover{border-color:var(--faint)}
+.btn:active{transform:translateY(1px)}
+.btn.primary{background:linear-gradient(180deg,#f2c461,var(--gold));color:var(--gold-ink);border-color:#f5d48a}
+.btn.primary:hover{filter:brightness(1.06)}
+.btn.ghost{background:transparent}
+.btn.small{padding:6px 10px;font-size:14px}
+.btn.danger{border-color:#7b2f29;color:#ffb3a8}
+.btn:disabled{opacity:.45;cursor:not-allowed}
+.row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+
+/* Event buttons */
+.events{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:10px}
+.ev{display:flex;flex-direction:column;gap:4px;text-align:left;background:var(--panel-2);border:1px solid var(--line);border-radius:12px;padding:12px 14px;cursor:pointer;transition:border-color .15s,transform .08s}
+.ev:hover{border-color:var(--gold-dim)}
+.ev:active{transform:scale(.98)}
+.ev .ev-n{font-weight:800;font-size:16px}
+.ev .ev-x{color:var(--muted);font-size:14px}
+.ev .ev-x b{color:var(--fg)}
+.ev .ev-tag{font-family:var(--f-label);font-size:12px;letter-spacing:.06em;color:var(--gold)}
+
+/* Alarm */
+.alarm{display:grid;grid-template-columns:auto 1fr;gap:16px;align-items:center}
+.clock{font-family:var(--f-display);font-size:54px;line-height:1;color:var(--fg);min-width:4.2ch;font-variant-numeric:tabular-nums}
+.clock.on{color:var(--gold)}
+.seg{display:inline-flex;border:1px solid var(--line-2);border-radius:10px;overflow:hidden}
+.seg button{background:transparent;border:0;padding:8px 12px;white-space:nowrap;cursor:pointer;font-weight:700;font-size:14px;color:var(--muted)}
+.seg button+button{border-left:1px solid var(--line-2)}
+.seg button[aria-pressed="true"]{background:var(--gold);color:var(--gold-ink)}
+
+/* Log list */
+.log{list-style:none;margin:0;padding:0;display:flex;flex-direction:column}
+.log li{display:grid;grid-template-columns:3.2em 1fr auto;gap:10px;align-items:baseline;padding:8px 0;border-top:1px solid var(--line)}
+.log li:first-child{border-top:0}
+.log .t{color:var(--faint);font-size:13px}
+.log .n{min-width:0}
+.log .n small{color:var(--muted);margin-left:6px}
+.log .x{color:var(--xp-2);font-weight:700;font-size:14px}
+.empty{color:var(--muted);font-size:15px;padding:6px 0}
+
+/* Quality / rarity */
+.q{font-family:var(--f-label);font-size:12px;letter-spacing:.06em;font-weight:700}
+.q-common{color:var(--q-common)} .q-uncommon{color:var(--q-uncommon)} .q-rare{color:var(--q-rare)} .q-epic{color:var(--q-epic)} .q-legend{color:var(--q-legend)}
+.catdot{display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:6px;vertical-align:1px}
+
+/* Exercise picker */
+.cats{display:flex;flex-direction:column;gap:16px}
+.cat-h{display:flex;align-items:baseline;gap:8px;margin-bottom:8px}
+.cat-h h3{font-size:16px;font-weight:800}
+.cat-h span{color:var(--muted);font-size:14px}
+.exlist{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:8px}
+.exbtn{display:flex;justify-content:space-between;gap:10px;align-items:center;text-align:left;background:var(--panel-2);border:1px solid var(--line);border-radius:10px;padding:10px 12px;cursor:pointer}
+.exbtn:hover{border-color:var(--line-2)}
+.exbtn .en{font-weight:700;min-width:0}
+.exbtn .ea{color:var(--muted);font-size:14px;white-space:nowrap}
+
+/* Dungeon */
+.dungeon-name{font-family:var(--f-display);font-size:24px;line-height:1.1}
+.rooms{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:8px}
+.room{display:grid;grid-template-columns:28px 1fr auto;gap:12px;align-items:center;padding:10px 12px;border:1px solid var(--line);border-radius:10px;background:var(--panel-2)}
+.room .ri{width:28px;height:28px;border-radius:50%;display:grid;place-items:center;font-weight:800;font-size:14px;background:#0e1018;border:1px solid var(--line-2);color:var(--muted)}
+.room.done{opacity:.55}
+.room.done .ri{background:var(--ok);color:#06240f;border-color:var(--ok)}
+.room.cur{border-color:var(--gold)}
+.room.cur .ri{background:var(--gold);color:var(--gold-ink);border-color:var(--gold)}
+.room.boss .mob{color:var(--q-epic)}
+.room .mob{font-size:13px;color:var(--muted);font-family:var(--f-label);letter-spacing:.05em}
+.room .rx{font-weight:700}
+
+/* Quests */
+.quest{display:flex;flex-direction:column;gap:8px;padding:12px 14px;border:1px solid var(--line);border-radius:12px;background:var(--panel-2)}
+.quest.ready{border-color:var(--gold)}
+.quest.claimed{opacity:.55}
+.quest-top{display:flex;justify-content:space-between;gap:10px;align-items:baseline}
+.quest-top b{font-size:16px}
+.reward{font-size:13px;color:var(--muted);white-space:nowrap}
+.reward em{font-style:normal;color:var(--gold)}
+.bar{position:relative;height:10px;border-radius:999px;background:#0b0c12;border:1px solid var(--line);overflow:hidden}
+.bar i{position:absolute;inset:0 auto 0 0;border-radius:999px;background:var(--gold)}
+.bar.hp{height:20px}
+.bar.hp i{background:linear-gradient(180deg,var(--hp-2),var(--hp))}
+.bar.hp span{position:absolute;inset:0;display:grid;place-items:center;font-size:13px;font-weight:800;text-shadow:0 1px 2px #000}
+
+.boss{display:grid;grid-template-columns:auto 1fr;gap:16px;align-items:center}
+.crest{width:72px;height:80px;display:grid;place-items:center;background:linear-gradient(180deg,#4a1f1f,#1c0e10);clip-path:polygon(50% 0,100% 18%,100% 70%,50% 100%,0 70%,0 18%);font-family:var(--f-display);font-size:38px;color:var(--hp-2)}
+.boss h3{font-family:var(--f-display);font-weight:500;font-size:28px;line-height:1}
+.boss .bt{color:var(--muted);font-size:14px}
+.lore{font-style:italic;color:var(--muted);font-size:15px}
+
+/* Hero tab */
+.stats{display:flex;flex-direction:column;gap:10px}
+.stat{display:grid;grid-template-columns:7.5em 1fr 3em;gap:10px;align-items:center;font-size:15px}
+.stat .v{text-align:right;font-weight:800}
+.ach{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:8px}
+.ach div{border:1px solid var(--line);border-radius:10px;padding:8px 10px;background:var(--panel-2);display:flex;flex-direction:column;gap:2px}
+.ach div b{font-size:14px}
+.ach div small{font-size:12px;color:var(--muted);line-height:1.3}
+.ach div.locked{opacity:.4;filter:grayscale(1)}
+.ach div.got{border-color:var(--gold-dim)}
+.ach div.got b{color:var(--gold)}
+.shop{display:flex;flex-direction:column;gap:8px}
+.shop-item{display:flex;justify-content:space-between;gap:12px;align-items:center;padding:10px 12px;border:1px solid var(--line);border-radius:10px;background:var(--panel-2)}
+.shop-item div{min-width:0}
+.shop-item small{display:block;color:var(--muted);font-size:13px}
+.field{display:flex;flex-direction:column;gap:6px}
+.field > span{font-size:14px;color:var(--muted);font-weight:700}
+input[type=text],select,textarea{font:inherit;color:var(--fg);background:#0e1018;border:1px solid var(--line-2);border-radius:10px;padding:10px 12px;width:100%}
+textarea{min-height:76px;font-size:13px;font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;word-break:break-all;resize:vertical}
+.checks{display:flex;flex-wrap:wrap;gap:8px}
+.checks label{display:inline-flex;gap:8px;align-items:center;border:1px solid var(--line-2);border-radius:10px;padding:8px 12px;cursor:pointer;font-weight:700;font-size:14px}
+.checks input{accent-color:var(--gold);width:16px;height:16px}
+.duel{width:100%;border-collapse:collapse;font-size:15px}
+.duel th{text-align:left;font-family:var(--f-label);font-size:12px;letter-spacing:.06em;color:var(--muted);font-weight:700;padding:6px 8px;border-bottom:1px solid var(--line-2)}
+.duel td{padding:8px;border-bottom:1px solid var(--line)}
+.duel td.r,.duel th.r{text-align:right}
+.duel tr.me td:first-child{color:var(--gold);font-weight:800}
+.tablewrap{overflow-x:auto}
+.heroes{display:flex;flex-wrap:wrap;gap:8px}
+
+/* Create */
+.create{max-width:760px;margin:0 auto;display:flex;flex-direction:column;gap:22px;width:100%}
+.create-hero{display:flex;flex-direction:column;gap:10px;padding-top:12px}
+.create-hero .eyebrow{font-family:var(--f-label);letter-spacing:.12em;color:var(--gold);font-size:14px}
+.create-hero h1{font-family:var(--f-display);font-weight:700;font-size:clamp(44px,9vw,76px);line-height:.95;color:var(--fg)}
+.create-hero p{color:var(--muted);font-size:18px;max-width:56ch}
+.how{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+.how div{border-top:2px solid var(--gold-dim);padding-top:10px;font-size:15px;color:var(--muted)}
+.how b{display:block;color:var(--fg);font-size:16px;margin-bottom:2px}
+.classes{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.cls{text-align:left;background:var(--panel-2);border:1px solid var(--line);border-radius:12px;padding:12px;cursor:pointer;display:flex;flex-direction:column;gap:2px}
+.cls b{font-family:var(--f-display);font-weight:500;font-size:22px;line-height:1.1}
+.cls small{color:var(--muted);font-size:13px}
+.cls[aria-pressed="true"]{border-color:var(--gold);background:linear-gradient(180deg,#2a2618,var(--panel-2))}
+.cls[aria-pressed="true"] b{color:var(--gold)}
+
+/* Modal */
+#modal{position:fixed;inset:0;z-index:50;background:rgba(5,6,10,.72);backdrop-filter:blur(3px);display:grid;place-items:center;padding:max(16px,env(safe-area-inset-top,0px)) max(16px,env(safe-area-inset-right,0px)) max(16px,env(safe-area-inset-bottom,0px)) max(16px,env(safe-area-inset-left,0px))}
+.m-box{width:min(460px,100%);max-height:100%;overflow:auto;background:linear-gradient(180deg,var(--panel-2),var(--panel));border:1px solid var(--gold-dim);border-radius:16px;padding:22px;display:flex;flex-direction:column;gap:14px;box-shadow:0 20px 60px rgba(0,0,0,.6);animation:pop .18s ease-out}
+.m-box.alarm-box{border-color:var(--hp);box-shadow:0 0 0 2px rgba(217,72,59,.35),0 20px 60px rgba(0,0,0,.6)}
+.m-head{display:flex;justify-content:space-between;gap:10px}
+.m-title{font-family:var(--f-display);font-weight:700;font-size:36px;line-height:1}
+.m-ctx{color:var(--gold);font-weight:700}
+.alarm-box .m-ctx{color:var(--hp-2)}
+.stepper{display:grid;grid-template-columns:56px 1fr 56px;gap:10px;align-items:center}
+.stepper button{height:56px;border-radius:12px;border:1px solid var(--line-2);background:#0e1018;font-size:28px;font-weight:800;cursor:pointer}
+.stepper output{text-align:center;font-family:var(--f-display);font-size:58px;line-height:1;font-variant-numeric:tabular-nums}
+.stepper output small{font-family:var(--f-body);font-size:16px;color:var(--muted);margin-left:6px}
+.timer{text-align:center;font-weight:800;color:var(--gold);min-height:1.4em}
+.tip{color:var(--muted);font-size:14px}
+.xp-preview{display:flex;flex-direction:column;gap:2px;padding:10px 12px;border-radius:10px;background:#0e1018;border:1px solid var(--line)}
+.xp-preview b{color:var(--xp-2);font-size:20px}
+.xp-preview span{color:var(--muted);font-size:13px}
+.m-actions{display:flex;gap:10px;justify-content:flex-end;flex-wrap:wrap}
+.m-actions .btn{flex:1 1 auto}
+.lvl{display:flex;flex-direction:column;align-items:center;text-align:center;gap:8px}
+.lvl .eyebrow{font-family:var(--f-label);letter-spacing:.14em;color:var(--gold)}
+.lvl-num{font-family:var(--f-display);font-size:120px;line-height:.9;color:var(--gold);text-shadow:0 0 30px rgba(230,176,74,.45);animation:rise .5s ease-out}
+.lvl p{color:var(--muted)}
+.lvl p b{color:var(--fg)}
+
+/* Toasts */
+#toasts{position:fixed;z-index:60;right:max(16px,env(safe-area-inset-right,0px));bottom:max(16px,env(safe-area-inset-bottom,0px));display:flex;flex-direction:column;gap:8px;align-items:flex-end;pointer-events:none;max-width:calc(100% - 32px)}
+.toast{background:#0e1018;border:1px solid var(--xp);color:var(--fg);padding:10px 14px;border-radius:10px;font-weight:700;font-size:15px;box-shadow:0 8px 24px rgba(0,0,0,.5);animation:toast 3.2s ease forwards}
+.toast.ach{border-color:var(--gold);color:var(--gold)}
+.toast.info{border-color:var(--line-2)}
+@keyframes toast{0%{opacity:0;transform:translateY(8px)}8%{opacity:1;transform:none}85%{opacity:1}100%{opacity:0;transform:translateY(-4px)}}
+@keyframes pop{from{opacity:0;transform:scale(.96)}to{opacity:1;transform:none}}
+@keyframes rise{from{opacity:0;transform:translateY(20px) scale(.9)}to{opacity:1;transform:none}}
+@media (prefers-reduced-motion:reduce){*{animation-duration:.01ms!important;transition:none!important}}
+
+@media (max-width:820px){
+  .grid{grid-template-columns:1fr}
+  .frame{grid-template-columns:auto 1fr}
+  .chips{grid-column:1/-1;flex-direction:row;flex-wrap:wrap}
+  .chip{flex:1 1 0;min-width:0;flex-direction:column;align-items:flex-start;gap:0}
+}
+@media (max-width:560px){
+  .tabs{grid-template-columns:repeat(2,1fr)}
+  .tab .key{display:none}
+  .how{grid-template-columns:1fr}
+  .classes{grid-template-columns:repeat(2,1fr)}
+  .who h1{font-size:28px}
+  .portrait{width:62px;height:62px}
+  .portrait span{font-size:32px}
+  .clock{font-size:44px}
+  .alarm{grid-template-columns:1fr}
+}
+</style>
+
+<div id="app"></div>
+<div id="modal" hidden></div>
+<div id="toasts" aria-live="polite"></div>
+
+<script>
+(function(){
+"use strict";
+/* ================= Data ================= */
+const CATS={
+  str:{n:'Styrka',s:'överkropp',c:'var(--c-str)'},
+  leg:{n:'Benkraft',s:'ben och rumpa',c:'var(--c-leg)'},
+  core:{n:'Bål',s:'mage och rygg',c:'var(--c-core)'},
+  cardio:{n:'Kondition',s:'puls',c:'var(--c-cardio)'}
+};
+const EQUIP={hantlar:'Hantlar',kettlebell:'Kettlebell',gummiband:'Gummiband',hopprep:'Hopprep'};
+const EX={
+  pushup:{n:'Armhävningar',cat:'str',unit:'reps',base:10,w:1.2,tip:'På knäna räknas också. Raka linjer från huvud till knä.'},
+  dips:{n:'Dips mot stol',cat:'str',unit:'reps',base:10,w:1.1,tip:'Använd en stadig stol eller soffkant.'},
+  pike:{n:'Pike-armhävningar',cat:'str',unit:'reps',base:8,w:1.3,tip:'Rumpan högt, sänk huvudet mot golvet. Tränar axlarna.'},
+  rowdb:{n:'Hantelrodd',cat:'str',unit:'reps',base:12,w:1.1,eq:['hantlar','kettlebell'],tip:'Per arm. Dra mot höften, rak rygg.'},
+  pressdb:{n:'Hantelpress',cat:'str',unit:'reps',base:10,w:1.1,eq:['hantlar']},
+  bandrow:{n:'Gummibandsrodd',cat:'str',unit:'reps',base:15,w:1,eq:['gummiband']},
+  pullapart:{n:'Band pull-apart',cat:'str',unit:'reps',base:15,w:.9,eq:['gummiband'],tip:'Raka armar, dra isär bandet mot bröstet.'},
+  squat:{n:'Knäböj',cat:'leg',unit:'reps',base:15,w:1,tip:'Knäna följer tårna, vikten på hälarna.'},
+  lunge:{n:'Utfall (per ben)',cat:'leg',unit:'reps',base:10,w:1.1},
+  bridge:{n:'Höftlyft',cat:'leg',unit:'reps',base:15,w:.9,tip:'Ligg på rygg, pressa upp höften och knip ihop rumpan.'},
+  wallsit:{n:'Väggsittning',cat:'leg',unit:'sec',base:30,w:1,tip:'Rygg mot väggen, knän i 90 grader.'},
+  jumpsquat:{n:'Upphopp-knäböj',cat:'leg',unit:'reps',base:10,w:1.4,tip:'Landa mjukt. Hoppa över om grannarna sover.'},
+  goblet:{n:'Goblet squat',cat:'leg',unit:'reps',base:12,w:1.2,eq:['kettlebell','hantlar']},
+  swing:{n:'Kettlebell-sving',cat:'leg',unit:'reps',base:15,w:1.3,eq:['kettlebell'],tip:'Kraften kommer från höften, inte armarna.'},
+  plank:{n:'Planka',cat:'core',unit:'sec',base:30,w:1,tip:'Spänn magen och rumpan. Andas.'},
+  sideplank:{n:'Sidoplanka (per sida)',cat:'core',unit:'sec',base:20,w:1},
+  situp:{n:'Situps',cat:'core',unit:'reps',base:15,w:.9},
+  superman:{n:'Superman',cat:'core',unit:'reps',base:12,w:.8,tip:'Ligg på mage, lyft armar och ben samtidigt.'},
+  hollow:{n:'Hollow hold',cat:'core',unit:'sec',base:20,w:1.2,tip:'Ländryggen i golvet, armar och ben lyfta.'},
+  twist:{n:'Rysk twist',cat:'core',unit:'reps',base:20,w:.9},
+  jacks:{n:'Hampelmän',cat:'cardio',unit:'reps',base:25,w:.8},
+  burpee:{n:'Burpees',cat:'cardio',unit:'reps',base:8,w:1.6,tip:'Ner, ut, in, upp, hopp. Ta det i din takt.'},
+  climber:{n:'Mountain climbers',cat:'cardio',unit:'reps',base:20,w:1.1,tip:'Räkna varje knä.'},
+  knees:{n:'Höga knän',cat:'cardio',unit:'sec',base:30,w:1},
+  rope:{n:'Hopprep',cat:'cardio',unit:'sec',base:60,w:1.1,eq:['hopprep']},
+  shadow:{n:'Skuggboxning',cat:'cardio',unit:'sec',base:45,w:.9}
+};
+const CLASSES={
+  krigare:{n:'Krigare',d:'+25 % XP på styrka',bonus:{str:.25}},
+  jagare:{n:'Jägare',d:'+25 % XP på benkraft',bonus:{leg:.25}},
+  smygare:{n:'Smygare',d:'+25 % XP på kondition',bonus:{cardio:.25}},
+  munk:{n:'Munk',d:'+25 % XP på bål',bonus:{core:.25}},
+  paladin:{n:'Paladin',d:'+12 % på styrka och bål',bonus:{str:.12,core:.12}},
+  druid:{n:'Druid',d:'+8 % XP på allt',bonus:{str:.08,leg:.08,core:.08,cardio:.08}}
+};
+const DIFF={easy:{n:'Lätt',m:.6,d:'Färre reps. Bra start eller för yngre hjältar.'},normal:{n:'Normal',m:1,d:'Lagom för de flesta vuxna.'},hard:{n:'Hård',m:1.4,d:'För dig som redan tränar.'}};
+const EVENTS=[
+  {id:'death',n:'Jag dog',tag:'Dödsstraff',ex:'burpee',f:.6},
+  {id:'wipe',n:'Gruppen wipeade',tag:'Hela gruppen lider',ex:'plank',f:1},
+  {id:'load',n:'Laddningsskärm eller flygresa',tag:'Res inte stilla',ex:'squat',f:1},
+  {id:'queue',n:'Väntar i kö',tag:'Kötid',ex:'wallsit',f:1},
+  {id:'ding',n:'Level up i spelet',tag:'Ding!',ex:'pushup',f:1},
+  {id:'loot',n:'Bra loot',tag:'Fira',ex:'jacks',f:1},
+  {id:'boss',n:'Fällde en boss',tag:'Segerdans',ex:'lunge',f:1},
+  {id:'afk',n:'Går AFK en stund',tag:'Rör på dig',ex:'climber',f:1}
+];
+const BOSSES=[
+  {n:'Grumbak',t:'Grottrollet',lore:'Har sovit i tre veckor och vägrar flytta på sig. Väck honom med knäböj.'},
+  {n:'Frostkäft',t:'Isdraken',lore:'Andas kyla över dalen. Bara svett kan tina upp den.'},
+  {n:'Morva',t:'Träskhäxan',lore:'Förbannar alla som sitter still för länge framför skärmen.'},
+  {n:'Kaldor',t:'Järngolemen',lore:'Smidd av bortglömda hantlar. Slå tillbaka med dina egna.'},
+  {n:'Nekra',t:'Skuggväverskan',lore:'Spinner nät runt soffor och gamingstolar. Riv dem med burpees.'},
+  {n:'Brakk',t:'Ogerhövdingen',lore:'Utmanar hela klanen på armhävningsduell. Han fuskar.'}
+];
+const BOSS_HP=1500;
+const DUNGEONS=['Kryptan under Kvarnbacken','Myrgrottorna','Järnskogens fästning','Det sjunkna klostret','Frostgruvan','Spindelns håla','Tornet vid Dimsjön'];
+const MOBS=['Skelettvakter','Grottspindlar','Kultister','Myrtroll','Isvargar','Banditer','Gastar','Slemkuber','Fladdermöss','Stengolemer'];
+const DBOSS=['Benkungen','Spindeldrottningen','Kultens överstepräst','Trolltrumslagaren','Frostjätten','Gruvfogden'];
+const RANKS=[[1,'Rekryt'],[5,'Lärling'],[10,'Äventyrare'],[20,'Veteran'],[30,'Kämpe'],[40,'Champion'],[50,'Hjälte'],[60,'Legend']];
+const SHOP=[
+  {id:'freeze',n:'Svitskydd',d:'Räddar svitten om du missar en dag. Används automatiskt. Max 2.',cost:150},
+  {id:'t1',n:'Titel: den Svettige',title:'den Svettige',cost:100},
+  {id:'t2',n:'Titel: Burpeesbetvingaren',title:'Burpeesbetvingaren',cost:250},
+  {id:'t3',n:'Titel: Plankans väktare',title:'Plankans väktare',cost:250},
+  {id:'t4',n:'Titel: Soffans besegrare',title:'Soffans besegrare',cost:400},
+  {id:'t5',n:'Titel: Gymmets skräck',title:'Gymmets skräck',cost:800}
+];
+const QN={common:'Vanlig',uncommon:'Ovanlig',rare:'Sällsynt',epic:'Episk',legend:'Legendarisk'};
+const qual=w=>w>=1.5?'legend':w>=1.35?'epic':w>=1.15?'rare':w>=1?'uncommon':'common';
+const ACH=[
+  ['first','Första blodet','Gör ditt första set',c=>c.sets>=1],
+  ['sets50','Grindaren','Gör 50 set',c=>c.sets>=50],
+  ['sets250','Farmaren','Gör 250 set',c=>c.sets>=250],
+  ['sets1000','Tusen set senare','Gör 1 000 set',c=>c.sets>=1000],
+  ['push100','Hundra armhävningar','Totalt 100 armhävningar',c=>(c.ex.pushup||0)>=100],
+  ['squat500','Benens herre','Totalt 500 knäböj',c=>(c.ex.squat||0)>=500],
+  ['plank600','Stenmuren','Totalt 10 minuter planka',c=>(c.ex.plank||0)>=600],
+  ['burpee100','Burpeeplågan','Totalt 100 burpees',c=>(c.ex.burpee||0)>=100],
+  ['death','Dödsstraffet betalt','Logga din första död',c=>c.deaths>=1],
+  ['event50','Spelande atlet','Logga 50 spelhändelser',c=>c.events>=50],
+  ['alarm10','Pausmästaren','Klara 10 raidvarningar',c=>c.alarms>=10],
+  ['dungeon1','Första rensningen','Klara en dungeon-runda',c=>c.dungeons>=1],
+  ['dungeon20','Dungeonveteranen','Klara 20 dungeon-rundor',c=>c.dungeons>=20],
+  ['boss1','Bossdödaren','Fäll en veckoboss',c=>c.bosses>=1],
+  ['boss10','Raidledaren','Fäll 10 veckobossar',c=>c.bosses>=10],
+  ['allcats','Allround','Alla fyra kategorier samma dag',c=>c.allcats],
+  ['streak3','Tre i rad','3 dagars svit',c=>c.streak>=3],
+  ['streak7','En hel vecka','7 dagars svit',c=>c.streak>=7],
+  ['streak30','Obeveklig','30 dagars svit',c=>c.streak>=30],
+  ['lvl10','Äventyraren','Nå nivå 10',c=>c.level>=10],
+  ['lvl30','Kämpen','Nå nivå 30',c=>c.level>=30],
+  ['lvl60','Maxnivå','Nå nivå 60',c=>c.level>=60]
+];
+
+/* ================= Storage ================= */
+const LS='forever-fitness-v1';
+function loadState(){try{const r=localStorage.getItem(LS);if(r){const s=JSON.parse(r);if(s&&s.profiles)return s}}catch(e){}return {profiles:{},active:null,tab:'spela',alarm:{on:false,min:30,end:0}}}
+let S=loadState();
+S.alarm=S.alarm||{on:false,min:30,end:0};
+function save(){try{localStorage.setItem(LS,JSON.stringify(S))}catch(e){}}
+const uid=()=>Math.random().toString(36).slice(2,10);
+function norm(p){return Object.assign({id:uid(),name:'Hjälte',cls:'krigare',diff:'normal',equip:[],log:[],gold:0,freezes:0,frozen:[],ach:{},titles:[],title:'',qcache:null,qclaimed:{},bossKills:{},dungeon:null,rivals:[],created:Date.now()},p||{})}
+Object.keys(S.profiles).forEach(k=>S.profiles[k]=norm(S.profiles[k]));
+const P=()=>S.profiles[S.active];
+
+/* ================= Utils ================= */
+const $=s=>document.querySelector(s);
+const esc=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const pad=n=>String(n).padStart(2,'0');
+const dkey=(d=new Date())=>`${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`;
+const today=()=>dkey();
+const addDays=(k,n)=>{const [y,m,d]=k.split('-').map(Number);return dkey(new Date(y,m-1,d+n))};
+const weekStart=(d=new Date())=>{const x=new Date(d.getFullYear(),d.getMonth(),d.getDate());x.setDate(x.getDate()-((x.getDay()+6)%7));return dkey(x)};
+const weekIndex=ws=>{const [y,m,d]=ws.split('-').map(Number);return Math.round(Date.UTC(y,m-1,d)/(7*864e5))};
+const pick=a=>a[Math.floor(Math.random()*a.length)];
+const shuffle=a=>{a=a.slice();for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]]}return a};
+const short=n=>n.replace(/\s*\(.*\)/,'');
+const unitLbl=(e,a)=>e.unit==='sec'?'s':'st';
+function rng(seed){let h=2166136261;for(const c of seed){h^=c.charCodeAt(0);h=Math.imul(h,16777619)}return()=>{h+=0x6D2B79F5;let t=h;t=Math.imul(t^t>>>15,t|1);t^=t+Math.imul(t^t>>>7,t|61);return((t^t>>>14)>>>0)/4294967296}}
+const b64e=o=>btoa(unescape(encodeURIComponent(JSON.stringify(o))));
+const b64d=s=>JSON.parse(decodeURIComponent(escape(atob(s))));
+
+/* ================= Game rules ================= */
+const need=L=>50+25*L;
+function levelInfo(xp){let L=1,acc=0;while(L<60&&xp>=acc+need(L)){acc+=need(L);L++}return {L,into:xp-acc,need:L<60?need(L):0}}
+const totalXP=p=>p.log.reduce((a,x)=>a+x.xp,0);
+const todayLog=p=>{const d=today();return p.log.filter(x=>x.d===d)};
+const weekXP=p=>{const ws=weekStart();return p.log.filter(x=>x.d>=ws).reduce((a,x)=>a+x.xp,0)};
+function rankFor(L){let r=RANKS[0][1];for(const [l,n] of RANKS)if(L>=l)r=n;return r}
+function pool(cat,unit){const p=P();return Object.keys(EX).filter(k=>{const e=EX[k];if(cat&&e.cat!==cat)return false;if(unit&&e.unit!==unit)return false;return !e.eq||e.eq.some(q=>p.equip.includes(q))})}
+function target(ex,f=1){const e=EX[ex],p=P();const L=levelInfo(totalXP(p)).L;const a=e.base*DIFF[p.diff].m*(1+Math.min(L,60)*.01)*f;return e.unit==='sec'?Math.max(10,Math.round(a/5)*5):Math.max(3,Math.round(a))}
+function activeDays(p){const s=new Set(p.log.filter(x=>x.ex).map(x=>x.d));(p.frozen||[]).forEach(d=>s.add(d));return s}
+function streak(p){const s=activeDays(p);let d=today();if(!s.has(d))d=addDays(d,-1);let n=0;while(s.has(d)){n++;d=addDays(d,-1)}return n}
+function autoFreeze(p){const s=activeDays(p);const y=addDays(today(),-1),yy=addDays(today(),-2);if(!s.has(y)&&s.has(yy)&&p.freezes>0){p.freezes--;p.frozen.push(y);save();toast('Svitskydd användes. Din svit lever!','ach')}}
+const isRested=p=>!todayLog(p).some(x=>x.ex);
+function calcXP(ex,amt,src){
+  const p=P(),e=EX[ex];const ratio=Math.min(2,amt/target(ex));const mults=[];
+  if(isRested(p))mults.push(['Utvilad',2]);
+  const cb=CLASSES[p.cls].bonus[e.cat];if(cb)mults.push([CLASSES[p.cls].n,1+cb]);
+  if(src==='event')mults.push(['Spelhändelse',1.5]);
+  if(src==='alarm')mults.push(['Raidvarning',1.5]);
+  if(src==='dungeon')mults.push(['Dungeon',1.2]);
+  const st=streak(p);if(st>1)mults.push([`Svit ${st} dagar`,+(1+Math.min(.3,st*.02)).toFixed(2)]);
+  const m=mults.reduce((a,[,v])=>a*v,1);
+  return {xp:Math.max(1,Math.round(12*e.w*ratio*m)),mults};
+}
+function counts(p){
+  const c={sets:0,ex:{},catxp:{str:0,leg:0,core:0,cardio:0},events:0,deaths:0,alarms:0,dungeons:0,bosses:Object.keys(p.bossKills||{}).length};
+  for(const x of p.log){if(x.ex){c.sets++;c.ex[x.ex]=(c.ex[x.ex]||0)+x.amt;c.catxp[x.cat]+=x.xp;if(x.src==='event')c.events++;if(x.ev==='death')c.deaths++;if(x.src==='alarm')c.alarms++}if(x.src==='chest')c.dungeons++}
+  c.level=levelInfo(totalXP(p)).L;c.streak=streak(p);c.allcats=new Set(todayLog(p).filter(x=>x.cat).map(x=>x.cat)).size>=4;return c;
+}
+function checkAch(){const p=P();const c=counts(p);for(const [id,n,,t] of ACH){if(!p.ach[id]&&t(c)){p.ach[id]=today();p.gold+=20;toast(`Bedrift: ${n} (+20 guld)`,'ach')}}}
+
+/* Quests */
+function getQuests(p){
+  const d=today();if(p.qcache&&p.qcache.day===d)return p.qcache.list;
+  const r=rng(d+p.id);const pk=a=>a[Math.floor(r()*a.length)];
+  const types=['reps','sec','cats','events','sets','dungeon','xp'];const chosen=[];
+  while(chosen.length<3){const t=pk(types);if(!chosen.includes(t))chosen.push(t)}
+  const list=chosen.map(t=>{
+    if(t==='reps'){const ex=pk(pool(null,'reps'));const g=target(ex)*3;return {id:t,ex,goal:g,label:`Gör ${g} st ${short(EX[ex].n).toLowerCase()}`,hint:'Fördela över flera set under dagen.',xp:60,gold:20}}
+    if(t==='sec'){const ex=pk(pool(null,'sec'));const g=target(ex)*3;return {id:t,ex,goal:g,label:`${short(EX[ex].n)} i totalt ${g} sekunder`,hint:'Flera korta set räknas ihop.',xp:60,gold:20}}
+    if(t==='cats')return {id:t,goal:4,label:'Träna alla fyra kategorier',hint:'Styrka, benkraft, bål och kondition.',xp:70,gold:25};
+    if(t==='events')return {id:t,goal:3,label:'Logga 3 spelhändelser',hint:'Dog du? Laddningsskärm? Tryck under Spela.',xp:50,gold:20};
+    if(t==='sets')return {id:t,goal:8,label:'Gör 8 set',hint:'Valfria övningar.',xp:60,gold:20};
+    if(t==='dungeon')return {id:t,goal:1,label:'Klara en dungeon-runda',hint:'Fem rum, en boss. Under Träna.',xp:60,gold:25};
+    return {id:'xp',goal:150,label:'Tjäna 150 XP på träning',hint:'Bonusar räknas.',xp:50,gold:20};
+  });
+  p.qcache={day:d,list};p.qclaimed={[d]:(p.qclaimed&&p.qclaimed[d])||[]};save();return list;
+}
+function qProgress(q,tl){
+  if(q.id==='reps'||q.id==='sec')return tl.filter(x=>x.ex===q.ex).reduce((a,x)=>a+x.amt,0);
+  if(q.id==='cats')return new Set(tl.filter(x=>x.cat).map(x=>x.cat)).size;
+  if(q.id==='events')return tl.filter(x=>x.src==='event').length;
+  if(q.id==='sets')return tl.filter(x=>x.ex).length;
+  if(q.id==='dungeon')return tl.filter(x=>x.src==='chest').length;
+  return tl.filter(x=>x.ex).reduce((a,x)=>a+x.xp,0);
+}
+function bossNow(){const ws=weekStart();return {ws,b:BOSSES[((weekIndex(ws)%BOSSES.length)+BOSSES.length)%BOSSES.length]}}
+
+/* ================= Actions ================= */
+function addLog(entry){const p=P();p.log.push(Object.assign({t:Date.now(),d:today()},entry))}
+function afterGain(before,label){const p=P();toast(label);checkAch();save();renderAll();const after=levelInfo(totalXP(p)).L;if(after>before)levelUp(after,before)}
+function logSet(ex,amt,src,ev){const p=P();autoFreeze(p);const before=levelInfo(totalXP(p)).L;const {xp}=calcXP(ex,amt,src);addLog({ex,amt,xp,src,cat:EX[ex].cat,ev:ev||null});afterGain(before,`+${xp} XP · ${short(EX[ex].n)}`)}
+function grant(xp,gold,src,label){const p=P();const before=levelInfo(totalXP(p)).L;if(xp)addLog({ex:null,amt:0,xp,src,cat:null});p.gold+=gold;afterGain(before,label)}
+
+/* ================= Audio ================= */
+let actx=null;
+function ensureAudio(){try{actx=actx||new (window.AudioContext||window.webkitAudioContext)();if(actx.state==='suspended')actx.resume()}catch(e){}}
+function beep(kind){try{ensureAudio();if(!actx)return;const notes=kind==='alarm'?[660,880,660,880,990]:kind==='lvl'?[523,659,784,1046]:[784,1046];const t0=actx.currentTime;notes.forEach((f,i)=>{const o=actx.createOscillator(),g=actx.createGain();o.type='triangle';o.frequency.value=f;const s=t0+i*.16;g.gain.setValueAtTime(.0001,s);g.gain.exponentialRampToValueAtTime(.28,s+.02);g.gain.exponentialRampToValueAtTime(.0001,s+.15);o.connect(g);g.connect(actx.destination);o.start(s);o.stop(s+.18)})}catch(e){}}
+
+/* ================= Modal / toast ================= */
+let pending=null;
+function modal(html,cls){const m=$('#modal');m.innerHTML=`<div class="m-box ${cls||''}" role="dialog" aria-modal="true">${html}</div>`;m.hidden=false;const f=m.querySelector('[data-autofocus]')||m.querySelector('.btn.primary');if(f)f.focus()}
+function closeModal(){const m=$('#modal');m.hidden=true;m.innerHTML='';if(pending&&pending.timer)clearInterval(pending.timer.iv);pending=null}
+function toast(msg,kind){const box=$('#toasts');while(box.children.length>=4)box.firstChild.remove();const t=document.createElement('div');t.className='toast '+(kind||'');t.textContent=msg;$('#toasts').appendChild(t);setTimeout(()=>t.remove(),3300)}
+
+function openLog(ex,src,f,ctx){const t=target(ex,f||1);pending={ex,amt:t,src:src||'free',ctx:ctx||{},timer:null};drawLog()}
+function drawLog(){
+  const {ex,amt,src,ctx}=pending;const e=EX[ex];const {xp,mults}=calcXP(ex,amt,src);const q=qual(e.w);
+  modal(`
+    <div class="m-head"><span class="q q-${q}">${QN[q]}</span><span class="label"><span class="catdot" style="background:${CATS[e.cat].c}"></span>${CATS[e.cat].n}</span></div>
+    ${ctx.title?`<p class="m-ctx">${esc(ctx.title)}</p>`:''}
+    <h2 class="m-title">${esc(e.n)}</h2>
+    <div class="stepper">
+      <button type="button" data-act="amt" data-v="-1" aria-label="Minska">−</button>
+      <output class="num" aria-live="polite">${amt}<small>${e.unit==='sec'?'sekunder':'st'}</small></output>
+      <button type="button" data-act="amt" data-v="1" aria-label="Öka">+</button>
+    </div>
+    ${e.unit==='sec'?`<button type="button" class="btn" data-act="timer">${pending.timer?'Timern går':'Starta timer'}</button><div class="timer num" id="tmr"></div>`:''}
+    ${e.tip?`<p class="tip">${esc(e.tip)}</p>`:''}
+    <div class="xp-preview"><b class="num">+${xp} XP</b><span>${mults.length?mults.map(m=>`${esc(m[0])} ×${m[1]}`).join(' · '):'Inga bonusar just nu'}</span></div>
+    <div class="m-actions">
+      ${ctx.snooze?'<button type="button" class="btn ghost" data-act="snooze">Om 5 min</button>':''}
+      <button type="button" class="btn" data-act="cancel">${ctx.snooze?'Hoppa över':'Avbryt'}</button>
+      <button type="button" class="btn primary" data-act="done">Klart!</button>
+    </div>`, src==='alarm'?'alarm-box':'');
+}
+function levelUp(L,before){
+  beep('lvl');const newRank=rankFor(L)!==rankFor(before);
+  modal(`<div class="lvl"><p class="eyebrow">Ny nivå</p><div class="lvl-num num">${L}</div>
+    <p>Övningarna blir lite tuffare, precis som monstren.</p>
+    ${newRank?`<p>Ny rang: <b>${rankFor(L)}</b></p>`:''}
+    <button type="button" class="btn primary" data-act="close">Fortsätt</button></div>`);
+}
+
+/* ================= Alarm ================= */
+let alarmFiring=false,alarmBeeps=0,wakeLock=null;
+function armAlarm(){S.alarm.end=Date.now()+S.alarm.min*60000;alarmFiring=false;save()}
+function startAlarm(){ensureAudio();S.alarm.on=true;armAlarm();try{navigator.wakeLock&&navigator.wakeLock.request('screen').then(l=>wakeLock=l).catch(()=>{})}catch(e){}renderAll();toast(`Raidvarning om ${S.alarm.min} minuter`,'info')}
+function stopAlarm(){S.alarm.on=false;alarmFiring=false;save();try{wakeLock&&wakeLock.release()}catch(e){}wakeLock=null;renderAll()}
+function fireAlarm(){alarmFiring=true;alarmBeeps=1;beep('alarm');const ex=pick(pool());openLog(ex,'alarm',1,{title:'Raidvarning! Pausa när du kan och gör setet.',snooze:true,onDone:armAlarm,onCancel:armAlarm})}
+function fmt(ms){const s=Math.max(0,Math.ceil(ms/1000));return `${Math.floor(s/60)}:${pad(s%60)}`}
+setInterval(()=>{
+  if(!P())return;
+  const el=$('#alarmClock');
+  if(S.alarm.on){
+    const left=S.alarm.end-Date.now();
+    if(el)el.textContent=alarmFiring?'Nu!':fmt(left);
+    if(left<=0&&!alarmFiring&&$('#modal').hidden)fireAlarm();
+    else if(alarmFiring&&alarmBeeps<4&&(-left)>alarmBeeps*15000){alarmBeeps++;beep('alarm')}
+  }else if(el)el.textContent=fmt(S.alarm.min*60000);
+},500);
+
+/* ================= Dungeon ================= */
+function newDungeon(){const rooms=shuffle(['str','leg','core','cardio']).map(c=>({ex:pick(pool(c)),f:1,mob:pick(MOBS)}));const bp=pool('cardio','reps').concat(pool('leg','reps'));rooms.push({ex:pick(bp),f:1.4,mob:pick(DBOSS),boss:true});P().dungeon={name:pick(DUNGEONS),rooms,i:0};save();renderAll()}
+function doRoom(){const d=P().dungeon;const r=d.rooms[d.i];openLog(r.ex,'dungeon',r.f,{title:`Rum ${d.i+1} av ${d.rooms.length}: ${r.mob}`,onDone:advanceDungeon})}
+function advanceDungeon(){const p=P();const d=p.dungeon;if(!d)return;d.i++;if(d.i>=d.rooms.length){p.dungeon=null;grant(50,25,'chest','Kistan öppnad! +50 XP, +25 guld')}else{save();renderAll()}}
+
+/* ================= Render ================= */
+let draft={name:'',cls:'krigare',diff:'normal',equip:[]};
+let confirmDelete=false;
+function renderAll(){const app=$('#app');if(!P()){app.innerHTML=renderCreate();return}const p=P();app.innerHTML=renderFrame(p)+renderTabs()+`<main>${({spela:viewPlay,trana:viewTrain,uppdrag:viewQuests,hjalte:viewHero}[S.tab]||viewPlay)(p)}</main>`}
+
+function renderCreate(){
+  const has=Object.keys(S.profiles).length>0;
+  return `<div class="create">
+    <div class="create-hero"><p class="eyebrow">Träningskompanjon för WoW-kvällar</p><h1>Forever Fitness</h1>
+      <p>Varje död, laddningsskärm och level up i spelet blir ett litet set i verkligheten. Samla XP, håll svitten vid liv och fäll veckans boss.</p></div>
+    <div class="how">
+      <div><b>Spela och träna</b>Tryck när något händer i spelet och gör övningen direkt.</div>
+      <div><b>Raidvarning</b>Ett pausalarm som ger dubbel nytta: rörelse och bonus-XP.</div>
+      <div><b>Familjeduell</b>Jämför vecko-XP med en kod. Funkar på olika datorer.</div>
+    </div>
+    <section class="panel">
+      <div class="panel-head"><h2>Skapa din hjälte</h2>${has?'<button type="button" class="btn small ghost" data-act="cancelCreate">Tillbaka</button>':''}</div>
+      <label class="field"><span>Namn</span><input type="text" id="c-name" maxlength="24" placeholder="t.ex. Oscar eller Pappa Björn" value="${esc(draft.name)}" autocomplete="off"></label>
+      <div class="field"><span>Klass ger extra XP på sin favoritkategori</span><div class="classes">
+        ${Object.entries(CLASSES).map(([k,c])=>`<button type="button" class="cls" data-act="draftCls" data-v="${k}" aria-pressed="${draft.cls===k}"><b>${c.n}</b><small>${c.d}</small></button>`).join('')}
+      </div></div>
+      <div class="field"><span>Svårighet</span><div class="seg" role="group">${Object.entries(DIFF).map(([k,d])=>`<button type="button" data-act="draftDiff" data-v="${k}" aria-pressed="${draft.diff===k}">${d.n}</button>`).join('')}</div><small class="tip">${DIFF[draft.diff].d} XP räknas mot din egen nivå, så duellen blir rättvis.</small></div>
+      <div class="field"><span>Redskap hemma (valfritt)</span><div class="checks">${Object.entries(EQUIP).map(([k,n])=>`<label><input type="checkbox" data-act="draftEq" value="${k}" ${draft.equip.includes(k)?'checked':''}>${n}</label>`).join('')}</div></div>
+      <div class="row"><button type="button" class="btn primary" data-act="create">Starta äventyret</button></div>
+    </section>
+    <section class="panel"><div class="panel-head"><h2>Har du en säkerhetskopia?</h2></div>
+      <p class="lead">Klistra in en kod som börjar med WFFB- för att återställa en hjälte.</p>
+      <textarea id="importCode" placeholder="WFFB-…"></textarea>
+      <div class="row"><button type="button" class="btn" data-act="importBackup">Återställ hjälte</button></div></section>
+  </div>`;
+}
+
+function renderFrame(p){
+  const xp=totalXP(p),li=levelInfo(xp),st=streak(p),rested=isRested(p);
+  const pct=li.need?Math.round(li.into/li.need*100):100;
+  const title=p.title||rankFor(li.L);
+  return `<header class="frame">
+    <div class="portrait" aria-hidden="true"><span>${esc((p.name||'?').trim().charAt(0).toUpperCase())}</span><div class="lvl-badge num">${li.L}</div></div>
+    <div class="who">
+      <h1>${esc(p.name)}</h1>
+      <p class="sub"><b>${esc(title)}</b> · ${CLASSES[p.cls].n} · nivå ${li.L} · ${DIFF[p.diff].n}</p>
+      <div class="xpbar ${rested?'rested':''}" role="progressbar" aria-valuemin="0" aria-valuemax="${li.need}" aria-valuenow="${li.into}" aria-label="Erfarenhet"><i style="width:${pct}%"></i></div>
+      <div class="xpline num"><span>${li.need?`${li.into} / ${li.need} XP till nivå ${li.L+1}`:'Maxnivå nådd'}</span>${rested?'<span class="rested-note">Utvilad: dubbel XP på första setet</span>':`<span>${xp} XP totalt</span>`}</div>
+    </div>
+    <div class="chips">
+      <div class="chip streak"><span>Svit</span><b class="num">${st} ${st===1?'dag':'dagar'}</b></div>
+      <div class="chip gold"><span>Guld</span><b class="num">${p.gold}</b></div>
+      <div class="chip"><span>Svitskydd</span><b class="num">${p.freezes}</b></div>
+    </div>
+  </header>`;
+}
+function renderTabs(){
+  const T=[['spela','Spela','händelser och larm'],['trana','Träna','dungeon och fritt pass'],['uppdrag','Uppdrag','dagens och veckans'],['hjalte','Hjälte','egenskaper och duell']];
+  return `<nav class="tabs" role="tablist">${T.map(([k,n,s],i)=>`<button type="button" class="tab" role="tab" aria-selected="${S.tab===k}" data-act="tab" data-v="${k}"><span class="key">${i+1}</span><strong>${n}</strong><small>${s}</small></button>`).join('')}</nav>`;
+}
+
+function renderLog(p){
+  const tl=todayLog(p).slice().reverse();
+  if(!tl.length)return '<p class="empty">Inget loggat idag än. Första setet ger dubbel XP.</p>';
+  const lastSet=tl.find(x=>x.ex);
+  const srcN={event:'händelse',alarm:'raidvarning',dungeon:'dungeon',free:'',quest:'uppdrag',chest:'kista'};
+  return `<ul class="log">${tl.slice(0,12).map(x=>{const t=new Date(x.t);const n=x.ex?`${esc(short(EX[x.ex].n))}<small class="num">${x.amt} ${EX[x.ex].unit==='sec'?'s':'st'}${srcN[x.src]?' · '+srcN[x.src]:''}</small>`:(x.src==='chest'?'Dungeonkista':'Uppdrag inlämnat');return `<li><span class="t num">${pad(t.getHours())}:${pad(t.getMinutes())}</span><span class="n">${n}</span><span class="x num">+${x.xp}</span></li>`}).join('')}</ul>
+  ${lastSet?`<div class="row"><button type="button" class="btn small ghost" data-act="undo" data-v="${lastSet.t}">Ångra senaste setet</button></div>`:''}`;
+}
+
+function viewPlay(p){
+  const on=S.alarm.on;
+  return `<div class="grid">
+    <section class="panel">
+      <div class="panel-head"><h2>Spelhändelser</h2><span class="label">+50 % XP</span></div>
+      <p class="lead">Ställ mobilen bredvid tangentbordet. När något av det här händer i spelet: tryck och gör övningen. Tar under en minut.</p>
+      <div class="events">${EVENTS.map(ev=>{const e=EX[ev.ex];return `<button type="button" class="ev" data-act="event" data-v="${ev.id}"><span class="ev-tag">${ev.tag}</span><span class="ev-n">${ev.n}</span><span class="ev-x"><b class="num">${target(ev.ex,ev.f)} ${e.unit==='sec'?'s':'st'}</b> ${esc(short(e.n).toLowerCase())}</span></button>`}).join('')}</div>
+    </section>
+    <div class="stack">
+      <section class="panel">
+        <div class="panel-head"><h2>Raidvarning</h2><span class="label">+50 % XP</span></div>
+        <p class="lead">Ett pausalarm medan du spelar. När det piper får du en slumpad övning.</p>
+        <div class="alarm"><div class="clock ${on?'on':''}" id="alarmClock">${on?(alarmFiring?'Nu!':fmt(S.alarm.end-Date.now())):fmt(S.alarm.min*60000)}</div>
+          <div class="stack" style="gap:10px">
+            <span class="label">intervall i minuter</span><div class="seg" role="group" aria-label="Intervall">${[15,20,30,45,60].map(m=>`<button type="button" data-act="alarmMin" data-v="${m}" aria-pressed="${S.alarm.min===m}" aria-label="${m} minuter">${m}</button>`).join('')}</div>
+            <div class="row">${on?'<button type="button" class="btn" data-act="alarmStop">Stoppa</button><button type="button" class="btn ghost small" data-act="alarmNow">Testa nu</button>':'<button type="button" class="btn primary" data-act="alarmStart">Starta raidvarning</button>'}</div>
+          </div></div>
+        <p class="tip">Ljudet hörs bäst om appen är öppen i en flik eller på mobilen.</p>
+      </section>
+      <section class="panel"><div class="panel-head"><h2>Idag</h2><span class="label num">${todayLog(p).filter(x=>x.ex).length} set</span></div>${renderLog(p)}</section>
+    </div>
+  </div>`;
+}
+
+function viewTrain(p){
+  const d=p.dungeon;
+  const dungeon=d?`<p class="dungeon-name">${esc(d.name)}</p>
+    <ol class="rooms">${d.rooms.map((r,i)=>{const e=EX[r.ex];const st=i<d.i?'done':i===d.i?'cur':'';return `<li class="room ${st} ${r.boss?'boss':''}"><span class="ri num">${i<d.i?'✓':i+1}</span><div><div class="mob">${esc(r.mob)}${r.boss?' · boss':''}</div><div class="rx">${esc(e.n)}</div></div><span class="num">${target(r.ex,r.f)} ${e.unit==='sec'?'s':'st'}</span></li>`}).join('')}</ol>
+    <div class="row"><button type="button" class="btn primary" data-act="room">${d.rooms[d.i].boss?'Möt bossen':'Gör rum '+(d.i+1)}</button><button type="button" class="btn ghost small" data-act="abandon">Ge upp rundan</button></div>`
+   :`<p class="lead">Fem rum: ett från varje kategori och en boss på slutet. Varje set ger +20 % XP och kistan i slutet ger 50 XP och 25 guld. Cirka 10 minuter.</p><div class="row"><button type="button" class="btn primary" data-act="dungeon">Gå in i en dungeon</button></div>`;
+  return `<div class="grid">
+    <section class="panel"><div class="panel-head"><h2>Dungeon-runda</h2><span class="label">5 rum</span></div>${dungeon}</section>
+    <section class="panel"><div class="panel-head"><h2>Fritt pass</h2><span class="label">din nivå: ${DIFF[p.diff].n.toLowerCase()}</span></div>
+      <div class="cats">${Object.entries(CATS).map(([c,ci])=>`<div><div class="cat-h"><span class="catdot" style="background:${ci.c}"></span><h3>${ci.n}</h3><span>${ci.s}</span></div>
+        <div class="exlist">${pool(c).map(k=>{const e=EX[k];return `<button type="button" class="exbtn" data-act="ex" data-v="${k}"><span class="en">${esc(e.n)}</span><span class="ea num">${target(k)} ${e.unit==='sec'?'s':'st'}</span></button>`}).join('')}</div></div>`).join('')}</div>
+    </section>
+  </div>`;
+}
+
+function viewQuests(p){
+  const qs=getQuests(p),tl=todayLog(p),claimed=p.qclaimed[today()]||[];
+  const {ws,b}=bossNow();const dmg=weekXP(p);const hp=Math.max(0,BOSS_HP-dmg);const killed=!!p.bossKills[ws];
+  const daysLeft=7-((new Date().getDay()+6)%7);
+  return `<div class="grid">
+    <section class="panel"><div class="panel-head"><h2>Dagens uppdrag</h2><span class="label">nya varje dag</span></div>
+      ${qs.map((q,i)=>{const pr=Math.min(q.goal,qProgress(q,tl));const done=claimed.includes(i);const ready=pr>=q.goal&&!done;
+        return `<div class="quest ${ready?'ready':''} ${done?'claimed':''}"><div class="quest-top"><b>${esc(q.label)}</b><span class="reward"><em>${q.xp} XP</em> · ${q.gold} guld</span></div>
+        <div class="bar" role="progressbar" aria-valuemin="0" aria-valuemax="${q.goal}" aria-valuenow="${pr}"><i style="width:${pr/q.goal*100}%"></i></div>
+        <div class="row" style="justify-content:space-between"><span class="tip num">${pr} / ${q.goal} · ${esc(q.hint)}</span>
+        ${done?'<span class="label">inlämnat</span>':ready?`<button type="button" class="btn primary small" data-act="claim" data-v="${i}">Lämna in</button>`:q.ex?`<button type="button" class="btn small" data-act="ex" data-v="${q.ex}">Gör ett set</button>`:''}</div></div>`}).join('')}
+    </section>
+    <section class="panel"><div class="panel-head"><h2>Veckans boss</h2><span class="label">${daysLeft} ${daysLeft===1?'dag':'dagar'} kvar</span></div>
+      <div class="boss"><div class="crest" aria-hidden="true">${b.n.charAt(0)}</div><div class="stack" style="gap:4px"><h3>${b.n}</h3><span class="bt">${b.t}</span></div></div>
+      <p class="lore">${b.lore}</p>
+      <div class="bar hp" role="progressbar" aria-valuemin="0" aria-valuemax="${BOSS_HP}" aria-valuenow="${hp}"><i style="width:${hp/BOSS_HP*100}%"></i><span class="num">${hp} / ${BOSS_HP} HP</span></div>
+      <p class="tip">All XP du tjänar den här veckan gör skada. Bossen byts varje måndag.</p>
+      ${killed?'<p class="m-ctx">Fälld! Ny boss på måndag.</p>':hp===0?'<div class="row"><button type="button" class="btn primary" data-act="bossClaim">Plundra bossen (+150 guld)</button></div>':''}
+    </section>
+  </div>`;
+}
+
+function viewHero(p){
+  const c=counts(p);const maxCat=Math.max(100,...Object.values(c.catxp));
+  const levelTitles=RANKS.filter(([l])=>c.level>=l).map(([,n])=>n);
+  const allTitles=levelTitles.concat(p.titles);
+  const myCard=heroCard(p);
+  const rows=[{n:p.name,l:c.level,w:weekXP(p),s:c.streak,me:true,fresh:true}].concat(p.rivals.map(r=>({n:r.n,l:r.l,w:r.ws===weekStart()?r.w:0,s:r.s,old:r.ws!==weekStart(),at:r.at}))).sort((a,b)=>b.w-a.w);
+  return `<div class="grid">
+    <div class="stack">
+      <section class="panel"><div class="panel-head"><h2>Egenskaper</h2><span class="label num">${c.sets} set totalt</span></div>
+        <div class="stats">${Object.entries(CATS).map(([k,ci])=>`<div class="stat"><span><span class="catdot" style="background:${ci.c}"></span>${ci.n}</span><div class="bar"><i style="width:${c.catxp[k]/maxCat*100}%;background:${ci.c}"></i></div><span class="v num">${10+Math.floor(c.catxp[k]/40)}</span></div>`).join('')}</div>
+        <p class="tip">Värdet växer med XP i varje kategori. Den kortaste stapeln visar vad du kan träna mer på.</p>
+      </section>
+      <section class="panel"><div class="panel-head"><h2>Familjeduell</h2><span class="label">vecko-XP</span></div>
+        <p class="lead">Kopiera din kod och skicka till den du tävlar mot. Klistra in deras kod här. Koden visar läget när den kopierades.</p>
+        <div class="tablewrap"><table class="duel"><thead><tr><th>Hjälte</th><th class="r">Nivå</th><th class="r">Svit</th><th class="r">Vecko-XP</th><th></th></tr></thead><tbody>
+          ${rows.map(r=>`<tr class="${r.me?'me':''}"><td>${esc(r.n)}${r.old?' <small class="tip">(förra veckans kod)</small>':''}</td><td class="r num">${r.l}</td><td class="r num">${r.s}</td><td class="r num">${r.w}</td><td class="r">${r.me?'':`<button type="button" class="btn small ghost" data-act="rmRival" data-v="${esc(r.n)}" aria-label="Ta bort ${esc(r.n)}">×</button>`}</td></tr>`).join('')}
+        </tbody></table></div>
+        <label class="field"><span>Din kod</span><textarea id="myCode" readonly>${myCard}</textarea></label>
+        <div class="row"><button type="button" class="btn" data-act="copy" data-v="myCode">Kopiera min kod</button></div>
+        <label class="field"><span>Klistra in en rivals kod</span><textarea id="rivalCode" placeholder="WFF1-…"></textarea></label>
+        <div class="row"><button type="button" class="btn" data-act="addRival">Lägg till rival</button></div>
+      </section>
+    </div>
+    <div class="stack">
+      <section class="panel"><div class="panel-head"><h2>Butik</h2><span class="label num">${p.gold} guld</span></div>
+        <div class="shop">${SHOP.map(it=>{const owned=it.title&&p.titles.includes(it.title);const maxed=it.id==='freeze'&&p.freezes>=2;return `<div class="shop-item"><div><b>${it.n}</b>${it.d?`<small>${it.d}</small>`:''}</div>${owned?'<span class="label">ägs</span>':`<button type="button" class="btn small" data-act="buy" data-v="${it.id}" ${p.gold<it.cost||maxed?'disabled':''}>${maxed?'Max':it.cost+' guld'}</button>`}</div>`}).join('')}</div>
+        <label class="field"><span>Visad titel</span><select id="titleSel">${allTitles.map(t=>`<option value="${esc(t)}" ${(p.title||rankFor(c.level))===t?'selected':''}>${esc(t)}</option>`).join('')}</select></label>
+      </section>
+      <section class="panel"><div class="panel-head"><h2>Bedrifter</h2><span class="label num">${Object.keys(p.ach).length} / ${ACH.length}</span></div>
+        <div class="ach">${ACH.map(([id,n,d])=>`<div class="${p.ach[id]?'got':'locked'}"><b>${n}</b><small>${d}</small></div>`).join('')}</div>
+      </section>
+      <section class="panel"><div class="panel-head"><h2>Inställningar</h2></div>
+        <label class="field"><span>Namn</span><input type="text" id="s-name" maxlength="24" value="${esc(p.name)}"></label>
+        <label class="field"><span>Klass</span><select id="s-cls">${Object.entries(CLASSES).map(([k,c])=>`<option value="${k}" ${p.cls===k?'selected':''}>${c.n} – ${c.d}</option>`).join('')}</select></label>
+        <div class="field"><span>Svårighet</span><div class="seg" role="group">${Object.entries(DIFF).map(([k,d])=>`<button type="button" data-act="setDiff" data-v="${k}" aria-pressed="${p.diff===k}">${d.n}</button>`).join('')}</div></div>
+        <div class="field"><span>Redskap hemma</span><div class="checks">${Object.entries(EQUIP).map(([k,n])=>`<label><input type="checkbox" data-act="setEq" value="${k}" ${p.equip.includes(k)?'checked':''}>${n}</label>`).join('')}</div></div>
+        <div class="field"><span>Hjältar på den här enheten</span><div class="heroes">${Object.values(S.profiles).map(h=>`<button type="button" class="btn small ${h.id===p.id?'primary':''}" data-act="switch" data-v="${h.id}">${esc(h.name)}</button>`).join('')}<button type="button" class="btn small ghost" data-act="newHero">+ Ny hjälte</button></div></div>
+        <label class="field"><span>Säkerhetskopia</span><textarea id="backupCode" readonly>WFFB-${b64e(p)}</textarea></label>
+        <p class="tip">Sparas bara i den här webbläsaren. Kopiera koden ibland och spara den, så kan du återställa hjälten om webbläsardatan rensas.</p>
+        <div class="row"><button type="button" class="btn small" data-act="copy" data-v="backupCode">Kopiera säkerhetskopia</button>
+          <button type="button" class="btn small danger" data-act="delete">${confirmDelete?'Säker? Tryck igen för att radera':'Radera hjälten'}</button></div>
+      </section>
+    </div>
+  </div>`;
+}
+function heroCard(p){return 'WFF1-'+b64e({n:p.name,l:levelInfo(totalXP(p)).L,w:weekXP(p),ws:weekStart(),s:streak(p),at:Date.now()})}
+
+/* ================= Events ================= */
+document.addEventListener('click',ev=>{
+  const m=$('#modal');
+  if(ev.target===m&&!m.hidden){const c=pending&&pending.ctx.onCancel;closeModal();c&&c();return}
+  const el=ev.target.closest('[data-act]');if(!el||el.tagName==='INPUT')return;
+  const a=el.dataset.act,v=el.dataset.v;const p=P();
+  switch(a){
+    case 'tab':S.tab=v;confirmDelete=false;save();renderAll();window.scrollTo({top:0});break;
+    case 'draftCls':draft.name=$('#c-name').value;draft.cls=v;renderAll();break;
+    case 'draftDiff':draft.name=$('#c-name').value;draft.diff=v;renderAll();break;
+    case 'create':{const name=($('#c-name').value||'').trim();if(!name){toast('Ge hjälten ett namn först','info');$('#c-name').focus();return}const np=norm({name,cls:draft.cls,diff:draft.diff,equip:draft.equip.slice()});S.profiles[np.id]=np;S.active=np.id;S.tab='spela';draft={name:'',cls:'krigare',diff:'normal',equip:[]};save();renderAll();toast(`Välkommen, ${name}!`,'ach');break}
+    case 'cancelCreate':S.active=S.active&&S.profiles[S.active]?S.active:Object.keys(S.profiles)[0];renderAll();break;
+    case 'event':{const e=EVENTS.find(x=>x.id===v);openLog(e.ex,'event',e.f,{title:e.n,ev:e.id});break}
+    case 'ex':openLog(v,'free',1,{});break;
+    case 'amt':{const e=EX[pending.ex];const step=e.unit==='sec'?5:(pending.amt>=20?5:1);pending.amt=Math.max(e.unit==='sec'?5:1,pending.amt+step*Number(v));drawLog();break}
+    case 'timer':{if(pending.timer)return;ensureAudio();const end=Date.now()+pending.amt*1000;const pd=pending;pd.timer={iv:setInterval(()=>{const left=Math.max(0,Math.ceil((end-Date.now())/1000));const t=$('#tmr');if(t)t.textContent=left>0?`${left} s kvar`:'Tiden är ute. Bra kämpat!';if(left<=0){clearInterval(pd.timer.iv);beep('done')}},250)};el.textContent='Timern går';break}
+    case 'done':{const {ex,amt,src,ctx}=pending;closeModal();if(src==='alarm'){alarmFiring=false}logSet(ex,amt,src,ctx.ev);ctx.onDone&&ctx.onDone();break}
+    case 'cancel':case 'close':{const c=pending&&pending.ctx.onCancel;closeModal();c&&c();break}
+    case 'snooze':{closeModal();S.alarm.end=Date.now()+5*60000;alarmFiring=false;save();toast('Raidvarning om 5 minuter','info');break}
+    case 'undo':{const t=Number(v);const i=p.log.findIndex(x=>x.t===t);if(i>=0){const x=p.log.splice(i,1)[0];save();renderAll();toast(`Ångrade ${short(EX[x.ex].n)} (−${x.xp} XP)`,'info')}break}
+    case 'alarmMin':S.alarm.min=Number(v);if(S.alarm.on)armAlarm();save();renderAll();break;
+    case 'alarmStart':startAlarm();break;
+    case 'alarmStop':stopAlarm();break;
+    case 'alarmNow':ensureAudio();S.alarm.end=Date.now();save();break;
+    case 'dungeon':newDungeon();break;
+    case 'room':doRoom();break;
+    case 'abandon':p.dungeon=null;save();renderAll();toast('Du flydde från dungeonen. Den finns kvar imorgon.','info');break;
+    case 'claim':{const qs=getQuests(p);const q=qs[Number(v)];const cl=p.qclaimed[today()]=p.qclaimed[today()]||[];if(q&&!cl.includes(Number(v))){cl.push(Number(v));grant(q.xp,q.gold,'quest',`Uppdrag klart! +${q.xp} XP, +${q.gold} guld`)}break}
+    case 'bossClaim':{const {ws,b}=bossNow();if(!p.bossKills[ws]&&weekXP(p)>=BOSS_HP){p.bossKills[ws]=true;beep('lvl');grant(0,150,'boss',`${b.n} är fälld! +150 guld`)}break}
+    case 'buy':{const it=SHOP.find(x=>x.id===v);if(!it||p.gold<it.cost)return;if(it.id==='freeze'){if(p.freezes>=2)return;p.freezes++}else{p.titles.push(it.title);p.title=it.title}p.gold-=it.cost;save();renderAll();toast(`Köpt: ${it.n}`,'ach');break}
+    case 'setDiff':p.diff=v;p.qcache=p.qcache&&p.qcache.day===today()?p.qcache:null;save();renderAll();break;
+    case 'switch':S.active=v;confirmDelete=false;save();renderAll();break;
+    case 'newHero':S.active=null;renderAll();break;
+    case 'delete':if(!confirmDelete){confirmDelete=true;renderAll();return}delete S.profiles[p.id];S.active=Object.keys(S.profiles)[0]||null;confirmDelete=false;save();renderAll();toast('Hjälten är raderad','info');break;
+    case 'copy':{const ta=document.getElementById(v);const txt=ta.value;const ok=()=>toast('Kopierat','info');const fb=()=>{ta.focus();ta.select();toast('Markerat. Tryck Ctrl+C för att kopiera','info')};try{navigator.clipboard.writeText(txt).then(ok,fb)}catch(e){fb()}break}
+    case 'addRival':{const raw=($('#rivalCode').value||'').trim();try{if(!raw.startsWith('WFF1-'))throw 0;const r=b64d(raw.slice(5));if(typeof r.n!=='string'||typeof r.w!=='number')throw 0;if(r.n===p.name&&Math.abs((r.at||0)-Date.now())<5000)throw 0;const o={n:String(r.n).slice(0,24),l:Number(r.l)||1,w:Number(r.w)||0,ws:String(r.ws||''),s:Number(r.s)||0,at:Number(r.at)||0};p.rivals=p.rivals.filter(x=>x.n!==o.n);p.rivals.push(o);save();renderAll();toast(`${o.n} tillagd i duellen`,'ach')}catch(e){toast('Koden fungerade inte. Den ska börja med WFF1-','info')}break}
+    case 'rmRival':p.rivals=p.rivals.filter(x=>x.n!==v);save();renderAll();break;
+    case 'importBackup':{const raw=($('#importCode').value||'').trim();try{if(!raw.startsWith('WFFB-'))throw 0;const o=norm(b64d(raw.slice(5)));if(!Array.isArray(o.log)||!CLASSES[o.cls]||!DIFF[o.diff])throw 0;S.profiles[o.id]=o;S.active=o.id;save();renderAll();toast(`${o.name} är tillbaka!`,'ach')}catch(e){toast('Koden fungerade inte. Den ska börja med WFFB-','info')}break}
+  }
+});
+document.addEventListener('change',ev=>{
+  const t=ev.target;const p=P();
+  if(t.dataset.act==='draftEq'){draft.equip=t.checked?draft.equip.concat(t.value):draft.equip.filter(x=>x!==t.value);return}
+  if(!p)return;
+  if(t.dataset.act==='setEq'){p.equip=t.checked?p.equip.concat(t.value):p.equip.filter(x=>x!==t.value);if(p.qcache&&p.qcache.day===today()){/* keep today's quests */}save();renderAll();return}
+  if(t.id==='s-name'){const n=t.value.trim();if(n){p.name=n.slice(0,24);save();renderAll()}return}
+  if(t.id==='s-cls'){p.cls=t.value;save();renderAll();return}
+  if(t.id==='titleSel'){p.title=t.value;save();renderAll();return}
+});
+document.addEventListener('input',ev=>{if(ev.target.id==='c-name')draft.name=ev.target.value});
+document.addEventListener('keydown',ev=>{
+  if(ev.key==='Escape'&&!$('#modal').hidden){const c=pending&&pending.ctx.onCancel;closeModal();c&&c();return}
+  if(!P()||!$('#modal').hidden)return;
+  const tag=(ev.target.tagName||'').toLowerCase();if(tag==='input'||tag==='textarea'||tag==='select'||ev.ctrlKey||ev.metaKey||ev.altKey)return;
+  const map={'1':'spela','2':'trana','3':'uppdrag','4':'hjalte'};if(map[ev.key]){S.tab=map[ev.key];save();renderAll()}
+});
+
+/* ================= Boot ================= */
+if(S.active&&!S.profiles[S.active])S.active=Object.keys(S.profiles)[0]||null;
+if(!S.active&&Object.keys(S.profiles).length)S.active=Object.keys(S.profiles)[0];
+if(P())autoFreeze(P());
+if(S.alarm.on&&S.alarm.end<Date.now())armAlarm();
+renderAll();
+})();
+</script>
+
+</body>
+</html>
