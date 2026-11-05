@@ -1,6 +1,6 @@
 // Forever Fitness service worker: gör appen installerbar och användbar offline.
 // Höj versionen när du vill tvinga fram en ny cache.
-const CACHE = 'forever-fitness-v1';
+const CACHE = 'forever-fitness-v2';
 const SHELL = [
   './',
   './index.html',
@@ -43,7 +43,8 @@ self.addEventListener('fetch', (e) => {
 
   // Egna filer och typsnitt: cachen först, uppdatera i bakgrunden.
   const cacheable = url.origin === location.origin ||
-    url.hostname === 'fonts.googleapis.com' || url.hostname === 'fonts.gstatic.com';
+    url.hostname === 'fonts.googleapis.com' || url.hostname === 'fonts.gstatic.com' ||
+    url.hostname === 'cdn.jsdelivr.net';
   if (!cacheable) return;
   e.respondWith(
     caches.match(req).then((hit) => {

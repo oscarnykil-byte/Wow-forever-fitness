@@ -16,6 +16,10 @@ Du samlar XP, går upp i nivå (1–60), håller svitten vid liv och fäller vec
 Framstegen sparas i webbläsaren på varje enhet. Använd säkerhetskopian under fliken Hjälte
 för att flytta en hjälte till en ny enhet.
 
+## Animationer
+Animationerna görs med [Motion](https://motion.dev) (laddas från jsDelivr och cachas för offline).
+Om Motion inte laddas, eller om enheten har "minska rörelse" påslaget, fungerar appen som vanligt utan animationer.
+
 ## Slå på GitHub Pages
 1. Gå till repot på GitHub → **Settings** → **Pages**.
 2. Under *Build and deployment* välj **Deploy from a branch**.
