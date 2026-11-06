@@ -4,7 +4,7 @@ local here = (arg and arg[0] or ""):match("^(.*)/[^/]*$") or "."
 package.path = here .. "/?.lua;" .. package.path
 local mock = require("wowmock")
 local ADDON_DIR = here .. "/../ForeverFitness"
-local FILES = { "Data.lua", "Core.lua", "Notify.lua", "Events.lua", "Config.lua" }
+local FILES = { "Data.lua", "Core.lua", "Notify.lua", "Events.lua", "Config.lua", "Export.lua" }
 
 local passed, failed = 0, 0
 
@@ -490,6 +490,101 @@ test("inställningar sparas per konto, logg per karaktär", function()
   eq(#_G.ForeverFitnessCharDB.log, 1, "karaktär")
   local e = _G.ForeverFitnessCharDB.log[1]
   ok(e.t and e.ev == "death" and e.ex == "burpee" and e.amt == ns.Target("burpee", 0.6, "easy", 1) and e.done == true, "loggpost")
+end)
+
+---------------------------------------------------------------------------
+-- Fas 3: export
+---------------------------------------------------------------------------
+test("base64 enligt standarden", function()
+  local ns = start()
+  local cases = { [""] = "", f = "Zg==", fo = "Zm8=", foo = "Zm9v", foob = "Zm9vYg==", foobar = "Zm9vYmFy", ["å"] = "w6U=" }
+  for plain, b64 in pairs(cases) do
+    eq(ns.Base64Encode(plain), b64, "kodning av " .. plain)
+    eq(ns.Base64Decode(b64), plain, "avkodning av " .. b64)
+  end
+  local all = {}
+  for i = 0, 255 do all[#all + 1] = string.char(i) end
+  all = table.concat(all)
+  eq(ns.Base64Decode(ns.Base64Encode(all)), all, "alla bytes")
+end)
+
+test("JSON fram och tillbaka", function()
+  local ns = start()
+  local v = { a = 1, b = "Ollon \"Slayer\" på\n60", c = { 1, 2.5, -3 }, d = true, e = false, f = {} }
+  local j = ns.JSONEncode(v)
+  eq(j, '{"a":1,"b":"Ollon \\"Slayer\\" på\\n60","c":[1,2.5,-3],"d":true,"e":false,"f":[]}', "text")
+  local back = ns.JSONDecode(j)
+  eq(back.b, v.b, "sträng"); eq(back.c[2], 2.5, "decimaltal"); eq(back.d, true, "sant"); eq(back.e, false, "falskt")
+end)
+
+local function doSets(ns, n)
+  ns.db.cooldown = 0
+  for i = 1, n do
+    ns.Fire(i % 2 == 0 and "death" or "ding")
+    ns.Finish(i == 3 and "skip" or "done")
+    mock.clock = mock.clock + 60
+  end
+end
+
+test("export har bara avklarade set och rätt innehåll", function()
+  local ns = start()
+  doSets(ns, 4) -- set 3 hoppas över
+  local code, n = ns.BuildExport()
+  eq(code:sub(1, 5), "WFFA-", "prefix")
+  eq(n, 3, "antal set")
+  local o = ns.ParseExport(code)
+  eq(o.v, 1, "version"); eq(o.c, "Ollon-Gillestugan", "karaktär")
+  ok(type(o.id) == "string" and #o.id > 10, "exportid")
+  eq(o.sets[1].ex, "pushup", "övning"); eq(o.sets[1].ev, "ding", "händelse")
+  eq(o.sets[2].ex, "burpee", "övning 2"); eq(o.sets[2].amt, 5, "antal")
+  eq(o.sets[3].u, 4, "löpnummer")
+  ok(o.sets[1].t < o.sets[2].t, "tid")
+end)
+
+test("/fit export tar bara nya set, igen och allt fungerar", function()
+  local ns = start()
+  doSets(ns, 2)
+  ns.Slash("export")
+  ok(ns.exportUI:IsShown(), "rutan visas")
+  local first = ns.exportUI.code
+  eq(#ns.ParseExport(first).sets, 2, "första exporten")
+  mock.chat = {}
+  ns.Slash("export")
+  ok(mock.chat[1]:find("Inga nya"), "ingen ny export")
+  ns.Slash("export igen")
+  eq(ns.exportUI.code, first, "samma kod igen")
+  doSets(ns, 1)
+  ns.Slash("export")
+  local o = ns.ParseExport(ns.exportUI.code)
+  eq(#o.sets, 1, "bara det nya setet"); eq(o.sets[1].u, 3, "rätt set")
+  ns.Slash("export allt")
+  eq(#ns.ParseExport(ns.exportUI.code).sets, 3, "alla set")
+end)
+
+test("långa exporter delas upp", function()
+  local ns = start()
+  for i = 1, ns.EXPORT_MAX + 5 do
+    ns.char.log[#ns.char.log + 1] = { t = 1762300000 + i, ev = "death", ex = "burpee", amt = 5, src = "event", done = true }
+  end
+  local code, n, more = ns.BuildExport()
+  ok(code, "kod"); eq(n, ns.EXPORT_MAX, "första delen"); eq(more, true, "fler kvar")
+  ns.Slash("export")
+  ns.Slash("export")
+  eq(#ns.ParseExport(ns.exportUI.code).sets, 5, "resten")
+end)
+
+test("webbappen kan läsa koden (samma avkodning som appen)", function()
+  local ns = start()
+  _G.UnitName = function() return "Åsa" end
+  doSets(ns, 2)
+  local code = ns.BuildExport()
+  local js = "const b64d=s=>JSON.parse(decodeURIComponent(escape(atob(s))));" ..
+    "const o=b64d(process.argv[1].slice(5));process.stdout.write(o.c+'|'+o.sets.length+'|'+o.sets[1].ex)"
+  local p = io.popen("node -e \"" .. js .. "\" '" .. code .. "' 2>&1")
+  local out = p and p:read("*a") or ""
+  if p then p:close() end
+  if out == "" then print("       (node saknas, hoppar över)") return end
+  eq(out, "Åsa-Gillestugan|2|burpee", "avkodat i node")
 end)
 
 print(string.format("\n%d ok, %d fel", passed, failed))

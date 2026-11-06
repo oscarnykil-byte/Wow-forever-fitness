@@ -71,6 +71,8 @@ function M.reset()
   _G.ForeverFitnessDB = nil
   _G.ForeverFitnessCharDB = nil
   _G.issecretvalue = nil
+  _G.UnitName = function() return "Ollon" end
+  _G.GetRealmName = function() return "Gillestugan" end
 end
 
 -- Läser in addonets filer i samma ordning som .toc-filen.

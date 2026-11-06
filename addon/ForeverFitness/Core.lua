@@ -3,7 +3,7 @@
 -- och flyttar inte karaktären.
 local ADDON, ns = ...
 ns.ADDON = ADDON or "ForeverFitness"
-ns.VERSION = "0.2.0"
+ns.VERSION = "0.3.0"
 
 local function exists(name) return type(_G[name]) == "function" end
 ns.exists = exists

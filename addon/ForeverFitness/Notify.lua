@@ -60,8 +60,9 @@ end
 function ns.Record(item, done)
   if not ns.char then return end
   local log = ns.char.log
+  ns.char.seq = (ns.char.seq or 0) + 1
   log[#log + 1] = {
-    t = ns.Clock(), ev = item.ev, ex = item.ex, amt = item.amt,
+    u = ns.char.seq, t = ns.Clock(), ev = item.ev, ex = item.ex, amt = item.amt,
     src = item.src, done = done and true or false,
   }
   while #log > ns.MAX_LOG do table.remove(log, 1) end

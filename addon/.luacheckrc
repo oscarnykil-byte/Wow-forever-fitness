@@ -14,6 +14,7 @@ files["ForeverFitness"] = {
     "LOOT_ITEM_SELF", "LOOT_ITEM_SELF_MULTIPLE", "C_Timer", "Settings",
     "InterfaceOptions_AddCategory", "InterfaceOptionsFrame_OpenToCategory",
     "IsShiftKeyDown", "Mixin", "date",
+    "UnitName", "GetRealmName", "ChatFontNormal", "GameFontHighlightSmall",
   },
 }
 files["tests"] = { globals = { "_G" }, allow_defined_top = true, ignore = { "212", "213" } }

@@ -2,7 +2,7 @@
 ## Title: Forever Fitness
 ## Notes: Kroppsviktsövningar när något händer i spelet. Kompletterar webbappen Forever Fitness.
 ## Author: Forever Fitness
-## Version: 0.2.0
+## Version: 0.3.0
 ## SavedVariables: ForeverFitnessDB
 ## SavedVariablesPerCharacter: ForeverFitnessCharDB
 
@@ -11,3 +11,4 @@ Core.lua
 Notify.lua
 Events.lua
 Config.lua
+Export.lua

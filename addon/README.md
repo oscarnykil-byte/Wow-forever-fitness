@@ -77,7 +77,7 @@ läsa appen, så du ställer in nivån själv:
 | `/fit config` | Öppna inställningarna |
 | `/fit test <händelse>` | Visa en provnotis. Spärrtid gäller inte och den sparas inte |
 | `/fit stats` | Set i dag, i veckan och totalt, plus mest gjorda övningar |
-| `/fit export` | Kod att klistra in i webbappen (fas 3) |
+| `/fit export` | Kod med nya avklarade set att klistra in i webbappen. `/fit export igen` visar förra koden, `/fit export allt` tar med alla set |
 | `/fit nivå <1–60>` | Hjältenivån i webbappen |
 | `/fit ljud` | Ljud på eller av |
 | `/fit ljudlista` | Vilka ljud som finns i spelet |
@@ -111,6 +111,24 @@ level up, episkt loot-ljud vid bossdöd och så vidare. Klienten är ny, så all
 ljud finns kanske inte. Då används ett annat ljud. `/fit ljudlista` visar
 vilka som finns.
 
+## Export till webbappen
+
+1. Skriv `/fit export` i spelet. En ruta med en kod som börjar med `WFFA-` visas.
+2. Tryck **Markera allt** och sedan **Ctrl+C**.
+3. Klistra in koden i en textfil eller ett meddelande till dig själv, så att du
+   har den på telefonen eller datorn där webbappen finns.
+4. I webbappen: **Hjälte → Inställningar → Importera från WoW-addonet**.
+   Klistra in och tryck **Importera set**.
+
+Koden innehåller alla avklarade set sedan förra exporten: tid, övning, antal och
+händelse. Seten loggas med rätt datum, med källan "addon", och ger XP som
+spelhändelser (×1,5). Samma kod kan bara importeras en gång, och samma set räknas
+aldrig två gånger även om två koder skulle överlappa. Importera till den hjälte i
+appen som ska ha seten.
+
+Har du fler än 400 set på en gång delas exporten upp. Kör `/fit export` igen
+efter att du har importerat den första koden.
+
 ## Sparad data
 
 - Inställningar sparas per konto (`ForeverFitnessDB`).
@@ -132,7 +150,10 @@ vilka som finns.
 6. Inställningar: `/fit config`. Byt övning för Död, kör `/fit test death`
    och kontrollera att den nya övningen syns. Tryck **Lyssna** på några rader.
 7. Statistik: gör ett par set och tryck **Klart!**, kör sedan `/fit stats`.
-8. Felsökning: `/fit debug` skriver ut fel i chatten i stället för att tiga.
+8. Export: kör `/fit export`, tryck **Markera allt** och **Ctrl+C**. Klistra
+   in i webbappen och importera. Kör `/fit export` igen, då ska det stå att
+   inga nya set finns.
+9. Felsökning: `/fit debug` skriver ut fel i chatten i stället för att tiga.
 
 ## Tester utan spelet
 
