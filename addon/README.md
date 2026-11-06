@@ -74,13 +74,48 @@ läsa appen, så du ställer in nivån själv:
 | Kommando | Vad det gör |
 |---|---|
 | `/fit` | Visa eller göm rutan |
+| `/fit config` | Öppna inställningarna |
 | `/fit test <händelse>` | Visa en provnotis. Spärrtid gäller inte och den sparas inte |
+| `/fit stats` | Set i dag, i veckan och totalt, plus mest gjorda övningar |
+| `/fit export` | Kod att klistra in i webbappen (fas 3) |
 | `/fit nivå <1–60>` | Hjältenivån i webbappen |
 | `/fit ljud` | Ljud på eller av |
+| `/fit ljudlista` | Vilka ljud som finns i spelet |
+| `/fit reset` | Visar hur du återställer. `/fit reset ja` återställer inställningar och rutans position, `/fit reset logg ja` tömmer loggen för karaktären |
 | `/fit hjälp` | Lista kommandona |
 
 Händelser för `/fit test`: `death`, `ding`, `load`, `taxi`, `boss`, `wipe`,
 `loot`, `afk`, `alarm`.
+
+## Inställningar
+
+Öppna med `/fit config` eller **Esc → Options → AddOns → Forever Fitness**.
+
+- **Svårighet:** Lätt, Normal eller Hård (0,6 / 1 / 1,4), samma som i appen.
+- **Hjältenivå i appen:** styr antalet reps. Skift-klick på +/− tar tio steg.
+- **Raidvarning var:** antal minuter mellan raidvarningarna.
+- **Spärrtid:** hur länge samma händelse är spärrad efter en notis.
+- **Ljud:** av eller på för alla händelser.
+- **Loot från:** lägsta kvalitet som räknas som bra loot.
+- **Händelser:** slå av eller på varje händelse, välj övning och ljud.
+  Vänsterklick på en knapp byter till nästa, högerklick till föregående.
+  **Lyssna** spelar ljudet.
+
+Övningar med * kräver redskap. Byter du övning räknas antalet med faktor 1,
+precis som när du byter övning i webbappen.
+
+### Ljud
+
+Varje händelse har ett eget ljud: bossvarning när du dör, "uppdrag klart" vid
+level up, episkt loot-ljud vid bossdöd och så vidare. Klienten är ny, så alla
+ljud finns kanske inte. Då används ett annat ljud. `/fit ljudlista` visar
+vilka som finns.
+
+## Sparad data
+
+- Inställningar sparas per konto (`ForeverFitnessDB`).
+- Loggen sparas per karaktär (`ForeverFitnessCharDB`): tid, händelse, övning,
+  antal och om setet gjordes eller hoppades över.
 
 ## Testa i spelet
 
@@ -94,7 +129,10 @@ Händelser för `/fit test`: `death`, `ding`, `load`, `taxi`, `boss`, `wipe`,
    den första, då ska den andra dyka upp.
 5. Riktiga händelser: ta en flygresa, gå igenom en portal (laddningsskärm),
    skriv `/afk`. Var och en ska ge en notis.
-6. Felsökning: `/fit debug` skriver ut fel i chatten i stället för att tiga.
+6. Inställningar: `/fit config`. Byt övning för Död, kör `/fit test death`
+   och kontrollera att den nya övningen syns. Tryck **Lyssna** på några rader.
+7. Statistik: gör ett par set och tryck **Klart!**, kör sedan `/fit stats`.
+8. Felsökning: `/fit debug` skriver ut fel i chatten i stället för att tiga.
 
 ## Tester utan spelet
 

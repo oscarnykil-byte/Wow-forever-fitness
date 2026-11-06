@@ -4,7 +4,7 @@ local here = (arg and arg[0] or ""):match("^(.*)/[^/]*$") or "."
 package.path = here .. "/?.lua;" .. package.path
 local mock = require("wowmock")
 local ADDON_DIR = here .. "/../ForeverFitness"
-local FILES = { "Data.lua", "Core.lua", "Notify.lua", "Events.lua" }
+local FILES = { "Data.lua", "Core.lua", "Notify.lua", "Events.lua", "Config.lua" }
 
 local passed, failed = 0, 0
 
@@ -342,6 +342,154 @@ test("rutans position sparas", function()
   ns.ui.scripts.OnDragStop(ns.ui)
   eq(ns.db.pos[1], "CENTER", "punkt")
   eq(ns.db.pos[3], 12, "x")
+end)
+
+---------------------------------------------------------------------------
+-- Fas 2: ljud, statistik, inställningar
+---------------------------------------------------------------------------
+local function findButton(prefix)
+  for _, f in ipairs(mock.frames) do
+    if f.kind == "Button" and type(f.text) == "string" and f.text:sub(1, #prefix) == prefix then return f end
+  end
+end
+
+test("olika ljud per händelse", function()
+  local ns = start()
+  _G.SOUNDKIT = { RAID_WARNING = 8959, READY_CHECK = 8960, IG_QUEST_LIST_COMPLETE = 618, UI_EPICLOOT_TOAST = 31578 }
+  ns.Fire("ding"); ns.Finish("done")
+  ns.Fire("boss"); ns.Finish("done")
+  ns.Fire("load"); ns.Finish("done")
+  eq(mock.sounds[1], 618, "level up")
+  eq(mock.sounds[2], 31578, "boss")
+  eq(mock.sounds[3], 8960, "laddningsskärm")
+end)
+
+test("ljud som saknas ger reservljud, tyst ger inget", function()
+  local ns = start()
+  _G.SOUNDKIT = {}
+  ns.Fire("ding"); ns.Finish("done")
+  eq(mock.sounds[1], 8959, "reservljud")
+  ns.db.triggers.death.sound = "none"
+  ns.Fire("death")
+  eq(#mock.sounds, 1, "tyst händelse spelade ljud")
+end)
+
+test("veckan börjar på måndag", function()
+  local ns = start()
+  local thu = os.time({ year = 2026, month = 11, day = 5, hour = 0, min = 30 })
+  local sun = os.time({ year = 2026, month = 11, day = 8, hour = 23, min = 59 })
+  local mon = os.time({ year = 2026, month = 11, day = 2, hour = 0, min = 1 })
+  eq(ns.WeekStartKey(thu), "2026-11-02", "torsdag")
+  eq(ns.WeekStartKey(sun), "2026-11-02", "söndag")
+  eq(ns.WeekStartKey(mon), "2026-11-02", "måndag")
+end)
+
+test("statistik: i dag, i veckan, totalt och mest gjorda", function()
+  local ns = start()
+  local now = os.time({ year = 2026, month = 11, day = 5, hour = 20 })
+  local day = 86400
+  local log = {
+    { t = now - 60, ex = "burpee", amt = 5, done = true },
+    { t = now - 120, ex = "burpee", amt = 6, done = true },
+    { t = now - 2 * day, ex = "squat", amt = 15, done = true },   -- tisdag samma vecka
+    { t = now - 5 * day, ex = "plank", amt = 30, done = true },   -- förra veckan
+    { t = now - 30, ex = "jacks", amt = 25, done = false },
+  }
+  local s = ns.Stats(log, now)
+  eq(s.today, 2, "i dag"); eq(s.week, 3, "i veckan"); eq(s.total, 4, "totalt"); eq(s.skipped, 1, "hoppade")
+  eq(s.top[1].ex, "burpee", "mest gjord"); eq(s.top[1].amt, 11, "summa")
+end)
+
+test("/fit stats skriver ut statistik", function()
+  local ns = start()
+  mock.fire("PLAYER_DEAD"); ns.Finish("done")
+  mock.chat = {}
+  ns.Slash("stats")
+  ok(mock.chat[1]:find("i dag: 1"), "rad 1: " .. tostring(mock.chat[1]))
+  ok(mock.chat[3] and mock.chat[3]:find("Burpees: 1 set"), "mest gjorda")
+end)
+
+test("inställningspanelen byggs och ändrar inställningarna", function()
+  local ns = start()
+  ok(ns.panel, "panel")
+  ns.RefreshPanel()
+  local b = findButton("Svårighet:")
+  ok(b, "svårighetsknapp")
+  eq(b.text, "Svårighet: Normal", "text")
+  b.scripts.OnClick(b, "LeftButton")
+  eq(ns.db.diff, "hard", "nästa")
+  b.scripts.OnClick(b, "RightButton"); b.scripts.OnClick(b, "RightButton")
+  eq(ns.db.diff, "easy", "bakåt")
+  local ex = findButton("Burpees")
+  ok(ex, "övningsknapp för död")
+  ex.scripts.OnClick(ex, "LeftButton")
+  eq(ns.db.triggers.death.ex, "climber", "ny övning")
+  ns.Fire("death")
+  eq(ns.current.ex, "climber", "notisen följer valet")
+end)
+
+test("ändrat intervall startar om raidvarningen", function()
+  local ns = start()
+  ns.db.alarmMin = 5; ns.StartAlarm()
+  mock.advance(5 * 60 + 1)
+  ok(ns.current and ns.current.key == "alarm", "raidvarning efter 5 min")
+end)
+
+test("/fit config öppnar inte under strid", function()
+  local ns = start()
+  mock.combat = true
+  ns.panel.shown = false
+  ns.Slash("config")
+  eq(ns.panel.shown, false, "öppnades under strid")
+  mock.combat = false
+  ns.Slash("config")
+  eq(ns.panel.shown, true, "öppnades inte")
+end)
+
+test("Settings-API:t används om det finns", function()
+  mock.reset()
+  local registered = {}
+  _G.Settings = {
+    RegisterCanvasLayoutCategory = function(frame, name) return { frame = frame, name = name, GetID = function() return 42 end } end,
+    RegisterAddOnCategory = function(cat) registered[#registered + 1] = cat end,
+    OpenToCategory = function(id) registered.opened = id end,
+  }
+  local ns = mock.load(ADDON_DIR, FILES)
+  mock.login()
+  eq(registered[1].name, "Forever Fitness", "registrerad")
+  ns.Slash("config")
+  eq(registered.opened, 42, "öppnad")
+  _G.Settings = nil
+end)
+
+test("/fit reset ja återställer men behåller loggen", function()
+  local ns = start()
+  ns.db.diff = "hard"; ns.db.pos = { "LEFT", "LEFT", 1, 2 }; ns.db.triggers.death.on = false
+  mock.fire("PLAYER_LEVEL_UP"); ns.Finish("done")
+  ns.Slash("reset")
+  eq(ns.db.diff, "hard", "återställt utan ja")
+  ns.Slash("reset ja")
+  eq(ns.db.diff, "normal", "svårighet"); eq(ns.db.pos, nil, "position"); eq(ns.db.triggers.death.on, true, "död på")
+  eq(#ns.char.log, 1, "loggen finns kvar")
+  ns.Slash("reset logg ja")
+  eq(#ns.char.log, 0, "loggen tömd")
+end)
+
+test("/fit ljudlista och /fit hjälp ger inga fel", function()
+  local ns = start()
+  mock.chat = {}
+  ns.Slash("ljudlista"); ns.Slash("hjälp"); ns.Slash("okänt")
+  ok(#mock.chat > 10, "inga rader")
+end)
+
+test("inställningar sparas per konto, logg per karaktär", function()
+  local ns = start()
+  ns.db.diff = "easy"
+  mock.fire("PLAYER_DEAD"); ns.Finish("done")
+  eq(_G.ForeverFitnessDB.diff, "easy", "konto")
+  eq(#_G.ForeverFitnessCharDB.log, 1, "karaktär")
+  local e = _G.ForeverFitnessCharDB.log[1]
+  ok(e.t and e.ev == "death" and e.ex == "burpee" and e.amt == ns.Target("burpee", 0.6, "easy", 1) and e.done == true, "loggpost")
 end)
 
 print(string.format("\n%d ok, %d fel", passed, failed))

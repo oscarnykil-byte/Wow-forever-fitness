@@ -99,3 +99,25 @@ function ns.FormatAmount(exId, amt)
   if e and e.unit == "sec" then return amt .. " sekunder" end
   return amt .. " st"
 end
+
+-- Ljud. Varje val har en lista med SOUNDKIT-namn som provas i ordning.
+-- Klienten är ny, så det som saknas hoppas över och till sist används
+-- raidvarningens ljud (8959). /fit ljudlista visar vad som finns i spelet.
+ns.SOUNDS = {
+  raid    = { n = "Raidvarning",     kit = { "RAID_WARNING" } },
+  ready   = { n = "Ready check",     kit = { "READY_CHECK" } },
+  whisper = { n = "Bossvarning",     kit = { "UI_RAID_BOSS_WHISPER_WARNING", "RAID_WARNING" } },
+  quest   = { n = "Uppdrag klart",   kit = { "IG_QUEST_LIST_COMPLETE", "READY_CHECK" } },
+  epic    = { n = "Episkt loot",     kit = { "UI_EPICLOOT_TOAST", "UI_LEGENDARY_LOOT_TOAST", "READY_CHECK" } },
+  legend  = { n = "Legendariskt",    kit = { "UI_LEGENDARY_LOOT_TOAST", "UI_EPICLOOT_TOAST", "READY_CHECK" } },
+  clock   = { n = "Väckarklocka",    kit = { "ALARM_CLOCK_WARNING_3", "ALARM_CLOCK_WARNING_2", "RAID_WARNING" } },
+  toast   = { n = "Pling",           kit = { "UI_BNET_TOAST", "TELL_MESSAGE", "READY_CHECK" } },
+  none    = { n = "Tyst",            kit = {} },
+}
+ns.SOUND_ORDER = { "raid", "ready", "whisper", "quest", "epic", "legend", "clock", "toast", "none" }
+
+-- Standardljud per händelse.
+ns.TRIGGER_SOUND = {
+  death = "whisper", ding = "quest", load = "ready", taxi = "ready",
+  boss = "epic", wipe = "raid", loot = "legend", afk = "toast", alarm = "clock",
+}

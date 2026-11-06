@@ -3,7 +3,7 @@
 -- och flyttar inte karaktären.
 local ADDON, ns = ...
 ns.ADDON = ADDON or "ForeverFitness"
-ns.VERSION = "0.1.0"
+ns.VERSION = "0.2.0"
 
 local function exists(name) return type(_G[name]) == "function" end
 ns.exists = exists
@@ -134,6 +134,14 @@ end
 ns.handlers = {}
 ns.onLoad = {}   -- körs efter ADDON_LOADED, när inställningarna finns
 ns.onLogin = {}  -- körs vid PLAYER_LOGIN
+
+-- Kör varje del för sig, så att ett fel inte stoppar resten.
+function ns.RunHooks(list, what)
+  for _, fn in ipairs(list) do
+    local ok, err = pcall(fn)
+    if not ok then ns.Print("Fel vid " .. what .. ": " .. tostring(err)) end
+  end
+end
 ns.frame = CreateFrame("Frame", "ForeverFitnessEventFrame")
 
 -- Registrerar en händelse om klienten känner till den. Returnerar true/false.
@@ -161,11 +169,11 @@ end)
 ns.On("ADDON_LOADED", function(name)
   if name ~= ns.ADDON then return end
   ns.InitDB()
-  for _, fn in ipairs(ns.onLoad) do fn() end
+  ns.RunHooks(ns.onLoad, "inläsning")
 end)
 
 ns.On("PLAYER_LOGIN", function()
-  for _, fn in ipairs(ns.onLogin) do fn() end
+  ns.RunHooks(ns.onLogin, "inloggning")
 end)
 
 ---------------------------------------------------------------------------
@@ -173,13 +181,24 @@ end)
 ---------------------------------------------------------------------------
 ns.commands = {}
 
+local HELP = {
+  "/fit  visa eller göm rutan",
+  "/fit config  öppna inställningarna",
+  "/fit test <händelse>  visa en provnotis",
+  "/fit stats  set i dag, i veckan och totalt",
+  "/fit export  kod till webbappen",
+  "/fit nivå <1-60>  hjältenivån i webbappen (styr antalet reps)",
+  "/fit ljud  ljud på eller av",
+  "/fit ljudlista  vilka ljud som finns i spelet",
+  "/fit reset  återställ inställningarna",
+}
+
 local function help()
   ns.Print("Kommandon:")
-  ns.Print("/fit test <händelse>  visa en provnotis. Händelser: " .. table.concat(ns.TRIGGER_ORDER, ", "))
-  ns.Print("/fit nivå <1-60>  hjältenivån i webbappen (styr antalet reps)")
-  ns.Print("/fit ljud  slå på eller av ljudet")
-  for _, c in ipairs(ns.commands) do ns.Print(c.help) end
+  for _, line in ipairs(HELP) do ns.Print(line) end
+  ns.Print("Händelser: " .. table.concat(ns.TRIGGER_ORDER, ", "))
 end
+ns.Help = help
 
 ns.commands.test = function(arg)
   local key = (arg or ""):lower()

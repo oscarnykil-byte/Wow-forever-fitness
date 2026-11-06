@@ -106,13 +106,38 @@ end
 ---------------------------------------------------------------------------
 local FALLBACK_SOUND = 8959 -- RAID_WARNING i vanliga WoW
 
-function ns.PlayAlert()
-  if not (ns.db and ns.db.sound) or type(PlaySound) ~= "function" then return end
+-- Vilket ljud en händelse har: eget val i inställningarna eller standard.
+function ns.SoundFor(key)
+  local t = ns.db and ns.db.triggers[key]
+  local choice = t and t.sound
+  if not ns.SOUNDS[choice or ""] then choice = ns.TRIGGER_SOUND[key] or "raid" end
+  return choice
+end
+
+-- SOUNDKIT-id för ett ljudval. nil = tyst. Saknas alla namn i klienten
+-- används reservljudet.
+function ns.SoundId(choice)
+  local s = ns.SOUNDS[choice]
+  if not s or #s.kit == 0 then return nil end
   local kit = type(SOUNDKIT) == "table" and SOUNDKIT or {}
-  local id = kit.RAID_WARNING or kit.READY_CHECK or FALLBACK_SOUND
+  for _, name in ipairs(s.kit) do
+    if type(kit[name]) == "number" then return kit[name], name end
+  end
+  return FALLBACK_SOUND, nil
+end
+
+function ns.PlaySoundChoice(choice)
+  if type(PlaySound) ~= "function" then return end
+  local id = ns.SoundId(choice)
+  if not id then return end
   if not ns.call(PlaySound, id, "Master") and id ~= FALLBACK_SOUND then
     ns.call(PlaySound, FALLBACK_SOUND, "Master")
   end
+end
+
+function ns.PlayAlert(key)
+  if not (ns.db and ns.db.sound) then return end
+  ns.PlaySoundChoice(ns.SoundFor(key))
 end
 
 function ns.Announce(text)
@@ -145,6 +170,18 @@ local function button(parent, text, onClick)
   return b
 end
 
+function ns.PlaceUI(f)
+  f = f or ns.ui
+  if not f then return end
+  f:ClearAllPoints()
+  local pos = ns.db and ns.db.pos
+  if type(pos) == "table" and pos[1] then
+    f:SetPoint(pos[1], UIParent, pos[2] or pos[1], pos[3] or 0, pos[4] or 0)
+  else
+    f:SetPoint("TOP", UIParent, "TOP", 0, -160)
+  end
+end
+
 function ns.CreateUI()
   if ns.ui then return ns.ui end
   local template = BackdropTemplateMixin and "BackdropTemplate" or nil
@@ -157,13 +194,7 @@ function ns.CreateUI()
   f:RegisterForDrag("LeftButton")
   f:SetScript("OnDragStart", f.StartMoving)
   f:SetScript("OnDragStop", function(self) self:StopMovingOrSizing(); savePos(self) end)
-  f:ClearAllPoints()
-  local pos = ns.db and ns.db.pos
-  if type(pos) == "table" and pos[1] then
-    f:SetPoint(pos[1], UIParent, pos[2] or pos[1], pos[3] or 0, pos[4] or 0)
-  else
-    f:SetPoint("TOP", UIParent, "TOP", 0, -160)
-  end
+  ns.PlaceUI(f)
   if f.SetBackdrop then
     f:SetBackdrop({
       bgFile = "Interface\\Tooltips\\UI-Tooltip-Background",
@@ -207,7 +238,7 @@ function ns.ShowNotice(item)
     f.exercise:SetText(e.n)
     f:Show()
   end
-  ns.PlayAlert()
+  ns.PlayAlert(item.key)
   ns.Announce("Forever Fitness: " .. amountText .. " " .. e.n:lower() .. "!")
 end
 

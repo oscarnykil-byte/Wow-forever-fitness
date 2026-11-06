@@ -13,6 +13,7 @@ files["ForeverFitness"] = {
     "BackdropTemplateMixin", "C_Item", "GetItemInfo", "issecretvalue",
     "LOOT_ITEM_SELF", "LOOT_ITEM_SELF_MULTIPLE", "C_Timer", "Settings",
     "InterfaceOptions_AddCategory", "InterfaceOptionsFrame_OpenToCategory",
+    "IsShiftKeyDown", "Mixin", "date",
   },
 }
 files["tests"] = { globals = { "_G" }, allow_defined_top = true, ignore = { "212", "213" } }
