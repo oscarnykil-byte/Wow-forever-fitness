@@ -42,3 +42,7 @@ Appen fungerar sedan offline.
 - Källan finns i `src/forever-fitness.html` (samma innehåll publiceras som Claude-artifact).
 - Bygg den fristående appen: `python3 tools/build.py` → skriver `index.html`.
 - Höj `CACHE` i `sw.js` om en uppdatering inte syns i den installerade appen.
+
+## WoW-addon (planerat)
+Ett addon som visar övningsnotiser direkt i spelet planeras i `addon/`.
+Prompten för att bygga det med Claude Code finns i [docs/addon-prompt.md](docs/addon-prompt.md).
