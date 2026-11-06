@@ -117,20 +117,26 @@ vilka som finns.
 ### Med QR-kod (enklast)
 
 1. Skriv `/fit export` i spelet. En ruta med en QR-kod visas.
-2. Skanna QR-koden med telefonens kamera och öppna länken.
-3. Webbappen öppnas och seten importeras direkt till hjälten som är vald.
+2. Öppna webbappen på telefonen: **Hjälte → Inställningar → Skanna QR från WoW**.
+   Tillåt kameran första gången.
+3. Rikta kameran mot QR-koden, ungefär 20–40 cm från skärmen. Seten importeras
+   direkt till hjälten som är vald i appen.
 
-Får seten inte plats i en QR-kod (ungefär 30 set per kod) visas flera. Skanna
-dem en i taget med **Nästa**. Ordningen spelar ingen roll.
+Får seten inte plats i en QR-kod (ungefär 30 set per kod) visas flera. Efter
+varje kod säger appen till exempel "QR 1 av 2 klar" och öppnar kameran igen.
+Tryck **Nästa** i spelet och skanna nästa. Skannar du samma kod två gånger
+händer ingenting, den räknas bara en gång.
 
-QR-koden öppnar `https://oscarnykil-byte.github.io/Wow-forever-fitness/`.
+Det fungerar även på iPhone när appen ligger på hemskärmen, eftersom skanningen
+görs inne i appen. Första gången behöver appen nätet för att ladda QR-läsaren.
+
+Du kan också skanna med telefonens vanliga kamera. Då öppnas länken i
+webbläsaren och seten importeras där. På iPhone har en app på hemskärmen egen
+lagring, skild från Safari, så använd skannern i appen där.
+
+QR-koden pekar på `https://oscarnykil-byte.github.io/Wow-forever-fitness/`.
 Ligger appen någon annanstans: `/fit adress https://...`. `/fit adress standard`
 återställer.
-
-**iPhone:** har du lagt appen på hemskärmen sparar den sina data separat från
-Safari, och QR-länken öppnas i Safari. Använd då textkoden nedan i stället, eller
-använd appen i Safari. På Android delar appen och Chrome data, så där fungerar
-QR-koden även för den installerade appen.
 
 ### Med textkod
 
@@ -171,8 +177,8 @@ Textkoden rymmer 400 set. Har du fler, kör `/fit export` igen efteråt.
 6. Inställningar: `/fit config`. Byt övning för Död, kör `/fit test death`
    och kontrollera att den nya övningen syns. Tryck **Lyssna** på några rader.
 7. Statistik: gör ett par set och tryck **Klart!**, kör sedan `/fit stats`.
-8. Export: kör `/fit export` och skanna QR-koden med telefonen. Webbappen ska
-   öppnas och visa "+… XP · … set från WoW". Kör `/fit export` igen, då ska
+8. Export: kör `/fit export` och tryck **Skanna QR från WoW** i webbappen.
+   Appen ska visa "+… XP · … set från WoW". Kör `/fit export` igen, då ska
    det stå att inga nya set finns.
 9. Felsökning: `/fit debug` skriver ut fel i chatten i stället för att tiga.
 

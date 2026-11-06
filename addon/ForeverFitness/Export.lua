@@ -232,7 +232,8 @@ end
 -- QR-kod: adress till webbappen med koden efter "#i=".
 -- Kortare format (v = 2) så att fler set ryms:
 --   { "v":2, "id":"<tid>-<första>-<sista>", "c":"<karaktär>", "t":<starttid>,
---     "e":[övnings-id], "k":[händelse-id], "s":[[u, sekunder efter t, e-index, antal, k-index]] }
+--     "e":[övnings-id], "k":[händelse-id], "s":[[u, sekunder efter t, e-index, antal, k-index]],
+--     "p":[sida, antal sidor] }
 -- Base64url (- och _ i stället för + och /, utan =) så att adressen fungerar.
 ---------------------------------------------------------------------------
 ns.DEFAULT_APP_URL = "https://oscarnykil-byte.github.io/Wow-forever-fitness/"
@@ -241,7 +242,7 @@ function ns.Base64Url(data)
   return (ns.Base64Encode(data):gsub("%+", "-"):gsub("/", "_"):gsub("=", ""))
 end
 
-local function compact(sets, key)
+local function compact(sets, key, page)
   local exIdx, evIdx, ex, ev, rows = {}, {}, {}, {}, {}
   local t0 = sets[1].t
   for _, e in ipairs(sets) do if e.t < t0 then t0 = e.t end end
@@ -254,33 +255,38 @@ local function compact(sets, key)
   return {
     v = 2, c = key, t = math.floor(t0),
     id = string.format("%d-%d-%d", ns.Clock(), sets[1].u, sets[#sets].u),
-    e = ex, k = ev, s = rows,
+    e = ex, k = ev, s = rows, p = page,
   }
 end
 
-function ns.QRUrl(sets, key, url)
-  return (url or ns.DEFAULT_APP_URL) .. "#i=" .. ns.EXPORT_PREFIX .. ns.Base64Url(encode(compact(sets, key)))
+function ns.QRUrl(sets, key, url, page)
+  return (url or ns.DEFAULT_APP_URL) .. "#i=" .. ns.EXPORT_PREFIX .. ns.Base64Url(encode(compact(sets, key, page)))
 end
 
 -- Delar upp seten på så få QR-koder som möjligt. Returnerar en lista med adresser.
 function ns.BuildQRPages(sets, url)
   local key = ns.CharKey()
   local cap = ns.QRCapacity(ns.QR_MAX_VERSION)
-  local pages, i = {}, 1
+  -- Sidnumret är inte känt förrän alla sidor är fördelade, så platsen
+  -- reserveras med ett tvåsiffrigt nummer och fylls i efteråt.
+  local reserve = { 99, 99 }
+  local chunks, i = {}, 1
   while i <= #sets do
-    local chunk, best = {}, nil
+    local chunk = {}
     while i <= #sets do
       chunk[#chunk + 1] = sets[i]
-      local u = ns.QRUrl(chunk, key, url)
-      if #u > cap then
+      if #ns.QRUrl(chunk, key, url, reserve) > cap then
         chunk[#chunk] = nil
         break
       end
-      best = u
       i = i + 1
     end
-    if not best then break end -- ett enda set får inte plats (orimligt lång adress)
-    pages[#pages + 1] = best
+    if #chunk == 0 then break end -- ett enda set får inte plats (orimligt lång adress)
+    chunks[#chunks + 1] = chunk
+  end
+  local pages = {}
+  for n, chunk in ipairs(chunks) do
+    pages[n] = ns.QRUrl(chunk, key, url, { n, #chunks })
   end
   return pages
 end

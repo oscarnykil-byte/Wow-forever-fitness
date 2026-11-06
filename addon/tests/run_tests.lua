@@ -663,6 +663,7 @@ test("QR-adressen innehåller seten i kort format", function()
   eq(o.e[first[3] + 1], sets[1].ex, "övning"); eq(first[4], sets[1].amt, "antal")
   eq(o.k[first[5] + 1], sets[1].ev, "händelse"); eq(o.t + first[2], sets[1].t, "tid")
   eq(first[1], sets[1].u, "löpnummer")
+  eq(o.p[1], 1, "sida"); eq(o.p[2], 1, "antal sidor")
 end)
 
 test("många set delas på flera QR-koder utan att något tappas", function()
@@ -677,7 +678,9 @@ test("många set delas på flera QR-koder utan att något tappas", function()
   local seen = 0
   for _, url in ipairs(pages) do
     ok(#url <= ns.QRCapacity(20), "får plats")
-    seen = seen + #decodeQRUrl(ns, url).s
+    local o = decodeQRUrl(ns, url)
+    seen = seen + #o.s
+    eq(o.p[2], #pages, "antal sidor i koden")
   end
   eq(seen, n, "alla set finns med")
   print(string.format("       (%d set på %d QR-koder, cirka %d per kod)", n, #pages, math.floor(n / #pages)))
