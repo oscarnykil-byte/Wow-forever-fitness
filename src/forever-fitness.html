@@ -745,8 +745,19 @@ function addLog(entry){const p=P();p.log.push(Object.assign({t:Date.now(),d:toda
 function afterGain(before,label,loot){const p=P();flyFrom=lastRect;toast(label);checkAch();save();renderAll();const aft=levelInfo(totalXP(p)).L;if(loot)setTimeout(()=>{showLoot(loot);checkAch();save()},CAN?650:0);if(aft>before)setTimeout(()=>queueModal(()=>levelUp(aft,before)),CAN?1100:0)}
 function logSet(ex,amt,src,ev){const p=P();vib(25);autoFreeze(p);const before=levelInfo(totalXP(p)).L;const {xp}=calcXP(ex,amt,src);const prev=p.log.reduce((m,x)=>x.ex===ex&&x.amt>m?x.amt:m,0);addLog({ex,amt,xp,src,cat:EX[ex].cat,ev:ev||null});if(prev>0&&amt>prev){p.gold+=10;beep('done');burstAt(lastRect,30,170);toast(`Nytt personbästa! ${short(EX[ex].n)}: ${amt} ${EX[ex].unit==='sec'?'s':'st'} (förra ${prev}). +10 guld`,'ach')}afterGain(before,`+${xp} XP · ${short(EX[ex].n)}`,rollLoot('set'))}
 /* Import från WoW-addonet: WFFA- + base64(JSON) från /fit export.
-   {v:1,id,c:karaktär,sets:[{u:löpnummer,t:unix-sekunder,ex,amt,ev,src}]} */
-function parseAddonCode(raw){raw=String(raw||'').replace(/\s+/g,'');if(!raw.startsWith('WFFA-'))throw new Error('prefix');const o=b64d(raw.slice(5));if(!o||o.v!==1||typeof o.id!=='string'||!Array.isArray(o.sets))throw new Error('format');return o}
+   v1 (textkoden): {v:1,id,c:karaktär,sets:[{u:löpnummer,t:unix-sekunder,ex,amt,ev,src}]}
+   v2 (QR-koden, base64url): {v:2,id,c,t:starttid,e:[övningar],k:[händelser],s:[[u,sekunder efter t,e-index,antal,k-index]]} */
+function parseAddonCode(raw){raw=String(raw||'').replace(/\s+/g,'');const at=raw.indexOf('#i=');if(at>=0)raw=decodeURIComponent(raw.slice(at+3));if(!raw.startsWith('WFFA-'))throw new Error('prefix');
+  let b=raw.slice(5).replace(/-/g,'+').replace(/_/g,'/');while(b.length%4)b+='=';const o=b64d(b);
+  if(o&&o.v===2&&Array.isArray(o.s)&&Array.isArray(o.e)){const k=Array.isArray(o.k)?o.k:[];const t0=Number(o.t)||0;
+    return {v:1,id:String(o.c||'?')+':'+String(o.id),c:o.c,sets:o.s.map(a=>Array.isArray(a)?{u:a[0],t:t0+(Number(a[1])||0),ex:o.e[a[2]],amt:a[3],ev:k[a[4]]}:null)}}
+  if(!o||o.v!==1||typeof o.id!=='string'||!Array.isArray(o.sets))throw new Error('format');return o}
+/* QR-koden från addonet öppnar appen med #i=WFFA-… i adressen. */
+let pendingImport=null;
+function importFromHash(){const h=location.hash||'';if(!h.startsWith('#i='))return;const code=h.slice(3);try{history.replaceState(null,'',location.pathname+location.search)}catch(e){location.hash=''}
+  const p=P();if(!p){pendingImport=code;toast('Skapa en hjälte först, sedan importeras seten från WoW.','info');return}
+  const r=importAddon(p,code);if(!r.ok)toast(r.msg,'info')}
+window.addEventListener('hashchange',importFromHash);
 function importAddon(p,raw){
   let o;try{o=parseAddonCode(raw)}catch(e){return {ok:false,msg:'Koden fungerade inte. Den ska börja med WFFA- och komma från /fit export i spelet.'}}
   p.addon=p.addon&&Array.isArray(p.addon.ids)?p.addon:{ids:[],seen:{}};p.addon.seen=p.addon.seen||{};
@@ -765,7 +776,7 @@ function importAddon(p,raw){
   }
   rememberId();p.addon.seen[ck]=[...seen];
   const ta=$('#addonCode');if(ta)ta.value='';
-  afterGain(before,`+${xp} XP · ${sets.length} set från WoW`,null);
+  afterGain(before,`+${xp} XP · ${sets.length} set från WoW till ${p.name}`,null);
   return {ok:true,sets:sets.length,xp};
 }
 function grant(xp,gold,src,label){const p=P();const before=levelInfo(totalXP(p)).L;if(xp)addLog({ex:null,amt:0,xp,src,cat:null});p.gold+=gold;afterGain(before,label,rollLoot(src))}
@@ -1326,7 +1337,7 @@ function viewHero(p){
         <div class="field"><span>Redskap hemma</span><div class="checks">${Object.entries(EQUIP).map(([k,n])=>`<label><input type="checkbox" data-act="setEq" value="${k}" ${p.equip.includes(k)?'checked':''}>${n}</label>`).join('')}</div></div>
         <div class="field"><span>Hjältar på den här enheten</span><div class="heroes">${Object.values(S.profiles).map(h=>`<button type="button" class="btn small ${h.id===p.id?'primary':''}" data-act="switch" data-v="${h.id}">${esc(h.name)}</button>`).join('')}<button type="button" class="btn small ghost" data-act="newHero">+ Ny hjälte</button></div></div>
         <label class="field"><span>Importera från WoW-addonet</span><textarea id="addonCode" placeholder="WFFA-…" spellcheck="false"></textarea></label>
-        <p class="tip">Skriv /fit export i spelet, kopiera koden och klistra in den här. Seten loggas med rätt datum och ger XP som spelhändelser. Samma kod kan bara importeras en gång.</p>
+        <p class="tip">Skriv /fit export i spelet och skanna QR-koden med telefonen, eller kopiera koden och klistra in den här. Seten loggas med rätt datum och ger XP som spelhändelser. Samma kod kan bara importeras en gång.</p>
         <div class="row"><button type="button" class="btn small primary" data-act="importAddon">Importera set</button></div>
         <label class="field"><span>Säkerhetskopia</span><textarea id="backupCode" readonly>WFFB-${b64e(p)}</textarea></label>
         <p class="tip">Sparas bara i den här webbläsaren. Kopiera koden ibland och spara den, så kan du återställa hjälten om webbläsardatan rensas.</p>
@@ -1348,7 +1359,7 @@ document.addEventListener('click',ev=>{
     case 'tab':S.tab=v;confirmDelete=false;save();renderAll();window.scrollTo({top:0});break;
     case 'draftCls':draft.name=$('#c-name').value;draft.cls=v;renderAll();break;
     case 'draftDiff':draft.name=$('#c-name').value;draft.diff=v;renderAll();break;
-    case 'create':{const name=($('#c-name').value||'').trim();if(!name){toast('Ge hjälten ett namn först','info');$('#c-name').focus();return}const np=norm({name,cls:draft.cls,diff:draft.diff,equip:draft.equip.slice()});S.profiles[np.id]=np;S.active=np.id;S.tab='spela';draft={name:'',cls:'warrior',diff:'normal',equip:[]};save();renderAll();toast(`Välkommen, ${name}!`,'ach');if(!S.introSeen)setTimeout(showIntro,CAN?500:0);break}
+    case 'create':{const name=($('#c-name').value||'').trim();if(!name){toast('Ge hjälten ett namn först','info');$('#c-name').focus();return}const np=norm({name,cls:draft.cls,diff:draft.diff,equip:draft.equip.slice()});S.profiles[np.id]=np;S.active=np.id;S.tab='spela';draft={name:'',cls:'warrior',diff:'normal',equip:[]};save();renderAll();toast(`Välkommen, ${name}!`,'ach');if(pendingImport){const r=importAddon(np,pendingImport);pendingImport=null;if(!r.ok)toast(r.msg,'info')}if(!S.introSeen)setTimeout(showIntro,CAN?500:0);break}
     case 'cancelCreate':S.active=S.active&&S.profiles[S.active]?S.active:Object.keys(S.profiles)[0];renderAll();break;
     case 'event':{if(lpFired){lpFired=false;return}const e=eventsFor(p).find(x=>x.id===v);if(!e)return;openLog(e.ex,'event',e.f,{title:e.n,ev:e.id});break}
     case 'ex':openLog(v,'free',1,{});break;
@@ -1441,5 +1452,6 @@ if(P())autoFreeze(P());
 Object.values(S.profiles).forEach(pp=>{if(pp.session&&Date.now()-pp.session.start>12*3600e3){const prev=S.active;S.active=pp.id;const last=pp.log.filter(x=>x.t>=pp.session.start).reduce((m,x)=>Math.max(m,x.t),pp.session.start+3600e3);endSession(true,Math.min(last,pp.session.start+12*3600e3));S.active=prev}});
 if(S.alarm.on&&S.alarm.end<Date.now())armAlarm();
 renderAll();
+importFromHash();
 })();
 </script>

@@ -3,7 +3,7 @@
 -- och flyttar inte karaktären.
 local ADDON, ns = ...
 ns.ADDON = ADDON or "ForeverFitness"
-ns.VERSION = "0.3.0"
+ns.VERSION = "0.4.0"
 
 local function exists(name) return type(_G[name]) == "function" end
 ns.exists = exists
@@ -186,7 +186,8 @@ local HELP = {
   "/fit config  öppna inställningarna",
   "/fit test <händelse>  visa en provnotis",
   "/fit stats  set i dag, i veckan och totalt",
-  "/fit export  kod till webbappen",
+  "/fit export  QR-kod och kod till webbappen (igen = förra, allt = alla set)",
+  "/fit adress  webbappens adress i QR-koden",
   "/fit nivå <1-60>  hjältenivån i webbappen (styr antalet reps)",
   "/fit ljud  ljud på eller av",
   "/fit ljudlista  vilka ljud som finns i spelet",

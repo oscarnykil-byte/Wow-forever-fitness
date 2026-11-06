@@ -77,7 +77,8 @@ läsa appen, så du ställer in nivån själv:
 | `/fit config` | Öppna inställningarna |
 | `/fit test <händelse>` | Visa en provnotis. Spärrtid gäller inte och den sparas inte |
 | `/fit stats` | Set i dag, i veckan och totalt, plus mest gjorda övningar |
-| `/fit export` | Kod med nya avklarade set att klistra in i webbappen. `/fit export igen` visar förra koden, `/fit export allt` tar med alla set |
+| `/fit export` | QR-kod och textkod med nya avklarade set till webbappen. `/fit export igen` visar förra exporten, `/fit export allt` tar med alla set |
+| `/fit adress <url>` | Webbappens adress i QR-koden (`standard` återställer) |
 | `/fit nivå <1–60>` | Hjältenivån i webbappen |
 | `/fit ljud` | Ljud på eller av |
 | `/fit ljudlista` | Vilka ljud som finns i spelet |
@@ -113,21 +114,41 @@ vilka som finns.
 
 ## Export till webbappen
 
-1. Skriv `/fit export` i spelet. En ruta med en kod som börjar med `WFFA-` visas.
-2. Tryck **Markera allt** och sedan **Ctrl+C**.
-3. Klistra in koden i en textfil eller ett meddelande till dig själv, så att du
-   har den på telefonen eller datorn där webbappen finns.
-4. I webbappen: **Hjälte → Inställningar → Importera från WoW-addonet**.
+### Med QR-kod (enklast)
+
+1. Skriv `/fit export` i spelet. En ruta med en QR-kod visas.
+2. Skanna QR-koden med telefonens kamera och öppna länken.
+3. Webbappen öppnas och seten importeras direkt till hjälten som är vald.
+
+Får seten inte plats i en QR-kod (ungefär 30 set per kod) visas flera. Skanna
+dem en i taget med **Nästa**. Ordningen spelar ingen roll.
+
+QR-koden öppnar `https://oscarnykil-byte.github.io/Wow-forever-fitness/`.
+Ligger appen någon annanstans: `/fit adress https://...`. `/fit adress standard`
+återställer.
+
+**iPhone:** har du lagt appen på hemskärmen sparar den sina data separat från
+Safari, och QR-länken öppnas i Safari. Använd då textkoden nedan i stället, eller
+använd appen i Safari. På Android delar appen och Chrome data, så där fungerar
+QR-koden även för den installerade appen.
+
+### Med textkod
+
+1. Skriv `/fit export`, tryck **Markera koden** och sedan **Ctrl+C**.
+2. Klistra in koden i ett meddelande till dig själv, så att du har den där
+   webbappen finns.
+3. I webbappen: **Hjälte → Inställningar → Importera från WoW-addonet**.
    Klistra in och tryck **Importera set**.
+
+### Vad som händer vid import
 
 Koden innehåller alla avklarade set sedan förra exporten: tid, övning, antal och
 händelse. Seten loggas med rätt datum, med källan "addon", och ger XP som
 spelhändelser (×1,5). Samma kod kan bara importeras en gång, och samma set räknas
-aldrig två gånger även om två koder skulle överlappa. Importera till den hjälte i
-appen som ska ha seten.
+aldrig två gånger, inte ens om du både skannar QR-koden och klistrar in textkoden.
 
-Har du fler än 400 set på en gång delas exporten upp. Kör `/fit export` igen
-efter att du har importerat den första koden.
+`/fit export igen` visar förra exporten. `/fit export allt` tar med alla set.
+Textkoden rymmer 400 set. Har du fler, kör `/fit export` igen efteråt.
 
 ## Sparad data
 
@@ -150,9 +171,9 @@ efter att du har importerat den första koden.
 6. Inställningar: `/fit config`. Byt övning för Död, kör `/fit test death`
    och kontrollera att den nya övningen syns. Tryck **Lyssna** på några rader.
 7. Statistik: gör ett par set och tryck **Klart!**, kör sedan `/fit stats`.
-8. Export: kör `/fit export`, tryck **Markera allt** och **Ctrl+C**. Klistra
-   in i webbappen och importera. Kör `/fit export` igen, då ska det stå att
-   inga nya set finns.
+8. Export: kör `/fit export` och skanna QR-koden med telefonen. Webbappen ska
+   öppnas och visa "+… XP · … set från WoW". Kör `/fit export` igen, då ska
+   det stå att inga nya set finns.
 9. Felsökning: `/fit debug` skriver ut fel i chatten i stället för att tiga.
 
 ## Tester utan spelet
@@ -169,3 +190,8 @@ cd addon && luacheck .
 ```
 
 Om `node` finns jämför testerna antalet reps mot webbappens egen `target()`.
+Med jsQR installerat läses QR-koderna också av med en riktig QR-läsare:
+
+```
+cd addon/tests && npm install --no-save jsqr@1.4.0
+```

@@ -219,7 +219,7 @@ function ns.BuildExport(all)
     c = key,
     sets = sets,
   }
-  return ns.EXPORT_PREFIX .. ns.Base64Encode(encode(payload)), #sets, more, last
+  return ns.EXPORT_PREFIX .. ns.Base64Encode(encode(payload)), #sets, more, last, sets
 end
 
 -- Läser en exportkod (används av testerna).
@@ -229,14 +229,73 @@ function ns.ParseExport(code)
 end
 
 ---------------------------------------------------------------------------
--- Exportrutan
+-- QR-kod: adress till webbappen med koden efter "#i=".
+-- Kortare format (v = 2) så att fler set ryms:
+--   { "v":2, "id":"<tid>-<första>-<sista>", "c":"<karaktär>", "t":<starttid>,
+--     "e":[övnings-id], "k":[händelse-id], "s":[[u, sekunder efter t, e-index, antal, k-index]] }
+-- Base64url (- och _ i stället för + och /, utan =) så att adressen fungerar.
 ---------------------------------------------------------------------------
+ns.DEFAULT_APP_URL = "https://oscarnykil-byte.github.io/Wow-forever-fitness/"
+
+function ns.Base64Url(data)
+  return (ns.Base64Encode(data):gsub("%+", "-"):gsub("/", "_"):gsub("=", ""))
+end
+
+local function compact(sets, key)
+  local exIdx, evIdx, ex, ev, rows = {}, {}, {}, {}, {}
+  local t0 = sets[1].t
+  for _, e in ipairs(sets) do if e.t < t0 then t0 = e.t end end
+  for _, e in ipairs(sets) do
+    if not exIdx[e.ex] then ex[#ex + 1] = e.ex; exIdx[e.ex] = #ex - 1 end
+    local k = e.ev or "event"
+    if not evIdx[k] then ev[#ev + 1] = k; evIdx[k] = #ev - 1 end
+    rows[#rows + 1] = { e.u, math.floor(e.t - t0 + 0.5), exIdx[e.ex], e.amt, evIdx[k] }
+  end
+  return {
+    v = 2, c = key, t = math.floor(t0),
+    id = string.format("%d-%d-%d", ns.Clock(), sets[1].u, sets[#sets].u),
+    e = ex, k = ev, s = rows,
+  }
+end
+
+function ns.QRUrl(sets, key, url)
+  return (url or ns.DEFAULT_APP_URL) .. "#i=" .. ns.EXPORT_PREFIX .. ns.Base64Url(encode(compact(sets, key)))
+end
+
+-- Delar upp seten på så få QR-koder som möjligt. Returnerar en lista med adresser.
+function ns.BuildQRPages(sets, url)
+  local key = ns.CharKey()
+  local cap = ns.QRCapacity(ns.QR_MAX_VERSION)
+  local pages, i = {}, 1
+  while i <= #sets do
+    local chunk, best = {}, nil
+    while i <= #sets do
+      chunk[#chunk + 1] = sets[i]
+      local u = ns.QRUrl(chunk, key, url)
+      if #u > cap then
+        chunk[#chunk] = nil
+        break
+      end
+      best = u
+      i = i + 1
+    end
+    if not best then break end -- ett enda set får inte plats (orimligt lång adress)
+    pages[#pages + 1] = best
+  end
+  return pages
+end
+
+---------------------------------------------------------------------------
+-- Exportrutan: QR-kod överst, textkoden under som reserv.
+---------------------------------------------------------------------------
+local QR_BOX = 420 -- QR-kodens storlek i punkter, med tyst zon
+
 function ns.CreateExportUI()
   if ns.exportUI then return ns.exportUI end
   local template = BackdropTemplateMixin and "BackdropTemplate" or nil
   local f = CreateFrame("Frame", "ForeverFitnessExport", UIParent, template)
-  f:SetSize(460, 240)
-  f:SetPoint("CENTER", UIParent, "CENTER", 0, 60)
+  f:SetSize(QR_BOX + 40, QR_BOX + 230)
+  f:SetPoint("CENTER", UIParent, "CENTER", 0, 0)
   f:SetFrameStrata("DIALOG")
   f:SetClampedToScreen(true)
   f:SetMovable(true); f:EnableMouse(true); f:RegisterForDrag("LeftButton")
@@ -249,27 +308,53 @@ function ns.CreateExportUI()
       tile = true, tileSize = 16, edgeSize = 16,
       insets = { left = 4, right = 4, top = 4, bottom = 4 },
     })
-    f:SetBackdropColor(0.05, 0.06, 0.1, 0.96)
+    f:SetBackdropColor(0.05, 0.06, 0.1, 0.97)
     f:SetBackdropBorderColor(0.56, 0.39, 0.94, 1)
   end
 
   f.title = f:CreateFontString(nil, "OVERLAY", "GameFontNormal")
   f.title:SetPoint("TOP", f, "TOP", 0, -12)
   f.info = f:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
-  f.info:SetPoint("TOPLEFT", f, "TOPLEFT", 14, -32)
-  f.info:SetPoint("TOPRIGHT", f, "TOPRIGHT", -14, -32)
+  f.info:SetPoint("TOPLEFT", f, "TOPLEFT", 16, -30)
+  f.info:SetPoint("TOPRIGHT", f, "TOPRIGHT", -16, -30)
   f.info:SetJustifyH("LEFT")
 
+  -- Vit bakgrund för QR-koden. Mörka moduler ritas som svarta rutor ovanpå.
+  f.qr = CreateFrame("Frame", nil, f)
+  f.qr:SetSize(QR_BOX, QR_BOX)
+  f.qr:SetPoint("TOP", f, "TOP", 0, -62)
+  f.qr.bg = f.qr:CreateTexture(nil, "BACKGROUND")
+  f.qr.bg:SetColorTexture(1, 1, 1, 1)
+  f.qr.bg:SetPoint("CENTER")
+  f.qr.pool = {}
+  f.page = f:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
+  f.page:SetPoint("TOP", f.qr, "BOTTOM", 0, -6)
+
+  f.prev = CreateFrame("Button", nil, f, "UIPanelButtonTemplate")
+  f.prev:SetSize(90, 22)
+  f.prev:SetPoint("RIGHT", f.page, "LEFT", -10, 0)
+  f.prev:SetText("Föregående")
+  f.prev:SetScript("OnClick", function() ns.ShowQRPage(f.pageIndex - 1) end)
+  f.next = CreateFrame("Button", nil, f, "UIPanelButtonTemplate")
+  f.next:SetSize(90, 22)
+  f.next:SetPoint("LEFT", f.page, "RIGHT", 10, 0)
+  f.next:SetText("Nästa")
+  f.next:SetScript("OnClick", function() ns.ShowQRPage(f.pageIndex + 1) end)
+
+  f.textLabel = f:CreateFontString(nil, "OVERLAY", "GameFontDisableSmall")
+  f.textLabel:SetPoint("TOPLEFT", f.qr, "BOTTOMLEFT", 0, -34)
+  f.textLabel:SetText("Eller kopiera koden och klistra in den i appen:")
+
   local scroll = CreateFrame("ScrollFrame", "ForeverFitnessExportScroll", f, "UIPanelScrollFrameTemplate")
-  scroll:SetPoint("TOPLEFT", f, "TOPLEFT", 14, -70)
-  scroll:SetPoint("BOTTOMRIGHT", f, "BOTTOMRIGHT", -32, 44)
+  scroll:SetPoint("TOPLEFT", f.textLabel, "BOTTOMLEFT", 0, -4)
+  scroll:SetPoint("BOTTOMRIGHT", f, "BOTTOMRIGHT", -34, 44)
   local box = CreateFrame("EditBox", nil, scroll)
   box:SetMultiLine(true)
   box:SetAutoFocus(false)
   box:SetFontObject(ChatFontNormal or GameFontHighlightSmall)
-  box:SetWidth(400)
+  box:SetWidth(QR_BOX - 20)
   box:SetMaxLetters(0)
-  box:SetScript("OnEscapePressed", function() f:Hide() end)
+  box:SetScript("OnEscapePressed", function(self) self:ClearFocus(); f:Hide() end)
   -- Koden går att markera men inte ändra.
   box:SetScript("OnTextChanged", function(self, user)
     if user and f.code then self:SetText(f.code); self:HighlightText() end
@@ -284,9 +369,9 @@ function ns.CreateExportUI()
   close:SetText("Stäng")
   close:SetScript("OnClick", function() f:Hide() end)
   local sel = CreateFrame("Button", nil, f, "UIPanelButtonTemplate")
-  sel:SetSize(120, 24)
+  sel:SetSize(140, 24)
   sel:SetPoint("BOTTOMLEFT", f, "BOTTOMLEFT", 12, 12)
-  sel:SetText("Markera allt")
+  sel:SetText("Markera koden")
   sel:SetScript("OnClick", function() box:SetFocus(); box:HighlightText() end)
 
   f:Hide()
@@ -294,38 +379,117 @@ function ns.CreateExportUI()
   return f
 end
 
-function ns.ShowExport(code, count, more)
+-- Ritar en QR-matris. Mörka moduler i samma rad slås ihop till en ruta,
+-- så att det blir färre texturer.
+function ns.DrawQR(holder, m, size)
+  local quiet = 4
+  local px = math.max(2, math.floor(QR_BOX / (size + quiet * 2)))
+  local full = (size + quiet * 2) * px
+  holder.bg:SetSize(full, full)
+  local used = 0
+  for y = 0, size - 1 do
+    local x = 0
+    while x < size do
+      if m[y][x] then
+        local x0 = x
+        while x < size and m[y][x] do x = x + 1 end
+        used = used + 1
+        local t = holder.pool[used]
+        if not t then
+          t = holder:CreateTexture(nil, "ARTWORK")
+          t:SetColorTexture(0, 0, 0, 1)
+          holder.pool[used] = t
+        end
+        t:ClearAllPoints()
+        t:SetPoint("TOPLEFT", holder.bg, "TOPLEFT", (quiet + x0) * px, -(quiet + y) * px)
+        t:SetSize((x - x0) * px, px)
+        t:Show()
+      else
+        x = x + 1
+      end
+    end
+  end
+  for i = used + 1, #holder.pool do holder.pool[i]:Hide() end
+  holder.used = used
+  return used, px
+end
+
+function ns.ShowQRPage(i)
+  local f = ns.exportUI
+  local pages = f and f.pages
+  if not pages or #pages == 0 then return end
+  if i < 1 then i = 1 elseif i > #pages then i = #pages end
+  f.pageIndex = i
+  local m, size = ns.QREncode(pages[i])
+  if m then ns.DrawQR(f.qr, m, size) end
+  f.page:SetText(#pages > 1 and string.format("QR %d av %d", i, #pages) or "")
+  if #pages > 1 then f.prev:Show(); f.next:Show() else f.prev:Hide(); f.next:Hide() end
+  if f.prev.SetEnabled then f.prev:SetEnabled(i > 1); f.next:SetEnabled(i < #pages) end
+end
+
+function ns.ShowExport(code, count, more, pages)
   local f = ns.CreateExportUI()
   f.code = code
+  f.pages = pages or {}
   f.title:SetText("Export till webbappen")
-  f.info:SetText(string.format(
-    "%d set. Tryck Markera allt och sedan Ctrl+C. Klistra in under Hjälte → Inställningar i webbappen.%s",
-    count, more and " Det finns fler set: kör /fit export igen efteråt." or ""))
+  local scan = #f.pages > 1 and "Skanna QR-koderna en i taget med telefonen." or "Skanna QR-koden med telefonen."
+  f.info:SetText(string.format("%d set. %s Seten hamnar hos hjälten som är vald i appen.%s",
+    count, scan, more and " Det finns fler set: kör /fit export igen efteråt." or ""))
   f.box:SetText(code)
   f:Show()
-  f.box:SetFocus()
-  f.box:HighlightText()
+  ns.ShowQRPage(1)
+end
+
+function ns.AppUrl()
+  local u = ns.db and ns.db.appUrl
+  if type(u) ~= "string" or u == "" then u = ns.DEFAULT_APP_URL end
+  return u
 end
 
 ns.commands.export = function(arg)
   if not ns.char then return end
+  if ns.InCombat() then
+    ns.Print("Exporten går inte att visa under strid. Försök igen efteråt.")
+    return
+  end
   arg = (arg or ""):lower()
   if arg == "igen" then
-    if ns.char.lastExport then
-      ns.ShowExport(ns.char.lastExport.code, ns.char.lastExport.count, false)
+    local last = ns.char.lastExport
+    if last then
+      ns.ShowExport(last.code, last.count, false, last.pages)
     else
       ns.Print("Ingen tidigare export finns.")
     end
     return
   end
-  local code, count, more, last = ns.BuildExport(arg == "allt")
+  local code, count, more, last, sets = ns.BuildExport(arg == "allt")
   if not code then
     ns.Print("Inga nya avklarade set sedan förra exporten. /fit export igen visar förra koden, /fit export allt tar med alla.")
     return
   end
+  local pages = ns.BuildQRPages(sets, ns.AppUrl())
   ns.char.exported = math.max(ns.char.exported or 0, last)
-  ns.char.lastExport = { code = code, count = count }
-  ns.ShowExport(code, count, more)
+  ns.char.lastExport = { code = code, count = count, pages = pages }
+  ns.ShowExport(code, count, more, pages)
+end
+
+-- /fit adress visar eller ändrar webbappens adress i QR-koden.
+ns.commands.adress = function(arg)
+  arg = arg or ""
+  if arg == "" then
+    ns.Print("QR-koden öppnar: " .. ns.AppUrl())
+    ns.Print("Ändra med /fit adress https://... eller återställ med /fit adress standard")
+    return
+  end
+  if arg:lower() == "standard" then
+    ns.db.appUrl = nil
+  elseif arg:match("^https?://") then
+    ns.db.appUrl = arg
+  else
+    ns.Print("Adressen ska börja med https://")
+    return
+  end
+  ns.Print("QR-koden öppnar nu: " .. ns.AppUrl())
 end
 
 table.insert(ns.onLoad, ns.CreateExportUI)

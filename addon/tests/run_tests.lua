@@ -4,7 +4,7 @@ local here = (arg and arg[0] or ""):match("^(.*)/[^/]*$") or "."
 package.path = here .. "/?.lua;" .. package.path
 local mock = require("wowmock")
 local ADDON_DIR = here .. "/../ForeverFitness"
-local FILES = { "Data.lua", "Core.lua", "Notify.lua", "Events.lua", "Config.lua", "Export.lua" }
+local FILES = { "Data.lua", "Core.lua", "Notify.lua", "Events.lua", "Config.lua", "QR.lua", "Export.lua" }
 
 local passed, failed = 0, 0
 
@@ -585,6 +585,136 @@ test("webbappen kan läsa koden (samma avkodning som appen)", function()
   if p then p:close() end
   if out == "" then print("       (node saknas, hoppar över)") return end
   eq(out, "Åsa-Gillestugan|2|burpee", "avkodat i node")
+end)
+
+---------------------------------------------------------------------------
+-- QR-kod
+---------------------------------------------------------------------------
+local function matrixText(m, size, text)
+  local hex = text:gsub(".", function(c) return string.format("%02x", c:byte()) end)
+  local rows = { hex }
+  for y = 0, size - 1 do
+    local r = {}
+    for x = 0, size - 1 do r[#r + 1] = m[y][x] and "1" or "0" end
+    rows[#rows + 1] = table.concat(r)
+  end
+  return table.concat(rows, "\n")
+end
+
+-- Skickar QR-matriser till jsQR. Returnerar listan med svar, eller nil om
+-- node eller jsqr saknas.
+local function readQR(blocks)
+  local tmp = os.tmpname()
+  local fh = assert(io.open(tmp, "wb")); fh:write(table.concat(blocks, "\n--\n")); fh:close()
+  local p = io.popen("node " .. here .. "/qr_check.js < " .. tmp .. " 2>/dev/null")
+  local out = p and p:read("*a") or ""
+  if p then p:close() end
+  os.remove(tmp)
+  if out == "" or out:match("^SKIP") then return nil end
+  local res = {}
+  for line in out:gmatch("[^\n]+") do res[#res + 1] = line end
+  return res
+end
+
+test("QR-kod går att läsa i alla versioner 1–20", function()
+  local ns = start()
+  eq(ns.QRCapacity(1), 17, "kapacitet v1")
+  eq(ns.QRCapacity(10), 271, "kapacitet v10")
+  eq(ns.QRCapacity(20), 858, "kapacitet v20")
+  math.randomseed(7)
+  local blocks = {}
+  for v = 1, 20 do
+    for _, frac in ipairs({ 0.6, 1 }) do
+      local len = math.max(1, math.floor(ns.QRCapacity(v) * frac))
+      local t = {}
+      for i = 1, len do t[i] = string.char(math.random(32, 126)) end
+      local text = table.concat(t)
+      local m, size, ver = ns.QREncode(text)
+      ok(m, "kodning " .. len)
+      eq(size, ver * 4 + 17, "storlek")
+      blocks[#blocks + 1] = matrixText(m, size, text)
+    end
+  end
+  eq(ns.QREncode(string.rep("x", 859)), nil, "för lång text")
+  local res = readQR(blocks)
+  if not res then print("       (node eller jsqr saknas, avkodning hoppas över)") return end
+  eq(#res, #blocks, "antal svar")
+  for i, r in ipairs(res) do eq(r, "ok", "QR nr " .. i) end
+end)
+
+local function decodeQRUrl(ns, url)
+  local b = url:match("#i=WFFA%-(.+)$")
+  b = b:gsub("%-", "+"):gsub("_", "/")
+  while #b % 4 ~= 0 do b = b .. "=" end
+  return ns.JSONDecode(ns.Base64Decode(b))
+end
+
+test("QR-adressen innehåller seten i kort format", function()
+  local ns = start()
+  doSets(ns, 4)
+  local _, _, _, _, sets = ns.BuildExport()
+  local pages = ns.BuildQRPages(sets, ns.DEFAULT_APP_URL)
+  eq(#pages, 1, "sidor")
+  eq(pages[1]:sub(1, #ns.DEFAULT_APP_URL + 8), ns.DEFAULT_APP_URL .. "#i=WFFA-", "början")
+  ok(not pages[1]:find("[+/=]", #ns.DEFAULT_APP_URL + 4), "base64url")
+  local o = decodeQRUrl(ns, pages[1])
+  eq(o.v, 2, "version"); eq(o.c, "Ollon-Gillestugan", "karaktär"); eq(#o.s, 3, "set")
+  local first = o.s[1]
+  eq(o.e[first[3] + 1], sets[1].ex, "övning"); eq(first[4], sets[1].amt, "antal")
+  eq(o.k[first[5] + 1], sets[1].ev, "händelse"); eq(o.t + first[2], sets[1].t, "tid")
+  eq(first[1], sets[1].u, "löpnummer")
+end)
+
+test("många set delas på flera QR-koder utan att något tappas", function()
+  local ns = start()
+  for i = 1, 120 do
+    ns.char.log[#ns.char.log + 1] = { t = 1762300000 + i * 37, ev = (i % 3 == 0) and "alarm" or "death",
+      ex = (i % 2 == 0) and "burpee" or "squat", amt = 5 + i % 7, src = "event", done = true }
+  end
+  local _, n, _, _, sets = ns.BuildExport()
+  local pages = ns.BuildQRPages(sets, ns.DEFAULT_APP_URL)
+  ok(#pages >= 2, "flera sidor")
+  local seen = 0
+  for _, url in ipairs(pages) do
+    ok(#url <= ns.QRCapacity(20), "får plats")
+    seen = seen + #decodeQRUrl(ns, url).s
+  end
+  eq(seen, n, "alla set finns med")
+  print(string.format("       (%d set på %d QR-koder, cirka %d per kod)", n, #pages, math.floor(n / #pages)))
+end)
+
+test("/fit export ritar QR-koden och den går att skanna", function()
+  local ns = start()
+  doSets(ns, 3)
+  ns.Slash("export")
+  local f = ns.exportUI
+  ok(f:IsShown(), "rutan")
+  eq(#f.pages, 1, "en QR")
+  ok(f.qr.used > 50, "rutor ritade: " .. tostring(f.qr.used))
+  local m, size = ns.QREncode(f.pages[1])
+  local res = readQR({ matrixText(m, size, f.pages[1]) })
+  if res then eq(res[1], "ok", "skanning") end
+  ns.Slash("export igen")
+  eq(#ns.exportUI.pages, 1, "igen visar QR")
+end)
+
+test("/fit export visas inte under strid", function()
+  local ns = start()
+  doSets(ns, 1)
+  mock.combat = true
+  ns.Slash("export")
+  eq(ns.exportUI:IsShown(), false, "visades under strid")
+  eq(ns.char.exported or 0, 0, "markerades som exporterad")
+end)
+
+test("/fit adress ändrar adressen i QR-koden", function()
+  local ns = start()
+  ns.Slash("adress https://example.org/ff/")
+  eq(ns.AppUrl(), "https://example.org/ff/", "ny adress")
+  ns.Slash("adress ftp://fel")
+  eq(ns.AppUrl(), "https://example.org/ff/", "ogiltig adress")
+  ns.Slash("adress standard")
+  eq(ns.AppUrl(), ns.DEFAULT_APP_URL, "standard")
 end)
 
 print(string.format("\n%d ok, %d fel", passed, failed))

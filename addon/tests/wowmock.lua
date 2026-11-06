@@ -25,6 +25,12 @@ local function newObject(kind)
     return p[1], p[2], p[3], p[4], p[5]
   end
   function methods:CreateFontString() return newObject("FontString") end
+  function methods:CreateTexture()
+    local t = newObject("Texture")
+    M.textures = (M.textures or 0) + 1
+    return t
+  end
+  function methods:SetSize(w, h) self.w, self.h = w, h end
   function methods:StartMoving() end
   function methods:StopMovingOrSizing() self.points = { "CENTER", nil, "CENTER", 12, 34 } end
   function methods:Click()
@@ -41,6 +47,7 @@ function M.reset()
   M.taxi = false
   M.afk = false
   M.frames = {}
+  M.textures = 0
   M.sounds = {}
   M.warnings = {}
   M.chat = {}
