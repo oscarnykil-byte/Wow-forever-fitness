@@ -331,6 +331,9 @@ details.howto summary{cursor:pointer;font-weight:800;color:var(--gold);font-size
 
 /* Modal */
 #modal,.modal-ghost{position:fixed;inset:0;z-index:50;background:rgba(5,6,10,.72);backdrop-filter:blur(3px);display:grid;place-items:center;padding:max(16px,env(safe-area-inset-top,0px)) max(16px,env(safe-area-inset-right,0px)) max(16px,env(safe-area-inset-bottom,0px)) max(16px,env(safe-area-inset-left,0px))}
+.scan{position:relative;width:100%;aspect-ratio:1;border-radius:12px;overflow:hidden;background:#000}
+.scan video{width:100%;height:100%;object-fit:cover;display:block}
+.scan i{position:absolute;inset:10%;border:3px solid var(--gold);border-radius:12px;box-shadow:0 0 0 999px rgba(0,0,0,.35);pointer-events:none}
 .m-box{width:min(460px,100%);max-height:100%;overflow:auto;background:linear-gradient(180deg,var(--panel-2),var(--panel));border:1px solid var(--gold-dim);border-radius:16px;padding:22px;display:flex;flex-direction:column;gap:14px;box-shadow:0 20px 60px rgba(0,0,0,.6)}
 html:not(.has-motion) .m-box{animation:pop .18s ease-out}
 .modal-ghost{pointer-events:none;z-index:49}
@@ -659,7 +662,7 @@ let S=loadState();
 S.alarm=S.alarm||{on:false,min:30,end:0};
 function save(){try{localStorage.setItem(LS,JSON.stringify(S))}catch(e){}}
 const uid=()=>Math.random().toString(36).slice(2,10);
-function norm(p){p=p||{};if(OLD_CLS[p.cls])p.cls=OLD_CLS[p.cls];if(!CLASSES[p.cls])p.cls='warrior';return Object.assign({id:uid(),name:'Hjälte',cls:'warrior',diff:'normal',equip:[],log:[],gold:0,freezes:0,frozen:[],ach:{},titles:[],title:'',qcache:null,qclaimed:{},bossKills:{},dungeon:null,rivals:[],evmap:{},customEvents:[],inv:{},look:{frame:null,banner:null},lootLog:[],dry:0,session:null,sessions:[],created:Date.now()},p)}
+function norm(p){p=p||{};if(OLD_CLS[p.cls])p.cls=OLD_CLS[p.cls];if(!CLASSES[p.cls])p.cls='warrior';return Object.assign({id:uid(),name:'Hjälte',cls:'warrior',diff:'normal',equip:[],log:[],gold:0,freezes:0,frozen:[],ach:{},titles:[],title:'',qcache:null,qclaimed:{},bossKills:{},dungeon:null,rivals:[],evmap:{},customEvents:[],inv:{},look:{frame:null,banner:null},lootLog:[],dry:0,session:null,sessions:[],addon:{ids:[],seen:{}},created:Date.now()},p)}
 Object.keys(S.profiles).forEach(k=>S.profiles[k]=norm(S.profiles[k]));
 const P=()=>S.profiles[S.active];
 
@@ -698,7 +701,7 @@ function calcXP(ex,amt,src){
   const C=CLASSES[p.cls];
   if(isRested(p))mults.push(['Utvilad',C.rested||2]);
   const cb=((C.bonus||{})[e.cat]||0)+(e.unit==='sec'?(C.sec||0):0)+((C.src||{})[src]||0);if(cb)mults.push([C.n,+(1+cb).toFixed(2)]);
-  if(src==='event')mults.push(['Spelhändelse',1.5]);
+  if(src==='event'||src==='addon')mults.push(['Spelhändelse',1.5]);
   if(src==='alarm')mults.push(['Raidvarning',1.5]);
   if(src==='dungeon')mults.push(['Dungeon',1.2]);
   if(p.session&&p.session.raid)mults.push(['Raidkväll',1.1]);
@@ -708,7 +711,7 @@ function calcXP(ex,amt,src){
 }
 function counts(p){
   const c={sets:0,ex:{},catxp:{str:0,leg:0,core:0,cardio:0},events:0,deaths:0,alarms:0,dungeons:0,bosses:Object.keys(p.bossKills||{}).length};
-  for(const x of p.log){if(x.ex){c.sets++;c.ex[x.ex]=(c.ex[x.ex]||0)+x.amt;c.catxp[x.cat]+=x.xp;if(x.src==='event')c.events++;if(x.ev==='death')c.deaths++;if(x.src==='alarm')c.alarms++}if(x.src==='chest')c.dungeons++}
+  for(const x of p.log){if(x.ex){c.sets++;c.ex[x.ex]=(c.ex[x.ex]||0)+x.amt;c.catxp[x.cat]+=x.xp;if(x.src==='event'||x.src==='addon')c.events++;if(x.ev==='death')c.deaths++;if(x.src==='alarm')c.alarms++}if(x.src==='chest')c.dungeons++}
   c.sessions=p.sessions.length;c.raids=p.sessions.filter(x=>x.raid).length;c.loot=Object.keys(p.inv).length;c.lootq={epic:0,legend:0};Object.keys(p.inv).forEach(k=>{const q=LOOTI[k]&&LOOTI[k][3];if(q in c.lootq)c.lootq[q]++});c.level=levelInfo(totalXP(p)).L;c.streak=streak(p);c.allcats=new Set(todayLog(p).filter(x=>x.cat).map(x=>x.cat)).size>=4;return c;
 }
 function checkAch(){const p=P();const c=counts(p);for(const [id,n,,t] of ACH){if(!p.ach[id]&&t(c)){p.ach[id]=today();p.gold+=20;toast(`Bedrift: ${n} (+20 guld)`,'ach')}}}
@@ -733,7 +736,7 @@ function getQuests(p){
 function qProgress(q,tl){
   if(q.id==='reps'||q.id==='sec')return tl.filter(x=>x.ex===q.ex).reduce((a,x)=>a+x.amt,0);
   if(q.id==='cats')return new Set(tl.filter(x=>x.cat).map(x=>x.cat)).size;
-  if(q.id==='events')return tl.filter(x=>x.src==='event').length;
+  if(q.id==='events')return tl.filter(x=>x.src==='event'||x.src==='addon').length;
   if(q.id==='sets')return tl.filter(x=>x.ex).length;
   if(q.id==='dungeon')return tl.filter(x=>x.src==='chest').length;
   return tl.filter(x=>x.ex).reduce((a,x)=>a+x.xp,0);
@@ -744,6 +747,78 @@ function bossNow(){const ws=weekStart();return {ws,b:BOSSES[((weekIndex(ws)%BOSS
 function addLog(entry){const p=P();p.log.push(Object.assign({t:Date.now(),d:today()},entry))}
 function afterGain(before,label,loot){const p=P();flyFrom=lastRect;toast(label);checkAch();save();renderAll();const aft=levelInfo(totalXP(p)).L;if(loot)setTimeout(()=>{showLoot(loot);checkAch();save()},CAN?650:0);if(aft>before)setTimeout(()=>queueModal(()=>levelUp(aft,before)),CAN?1100:0)}
 function logSet(ex,amt,src,ev){const p=P();vib(25);autoFreeze(p);const before=levelInfo(totalXP(p)).L;const {xp}=calcXP(ex,amt,src);const prev=p.log.reduce((m,x)=>x.ex===ex&&x.amt>m?x.amt:m,0);addLog({ex,amt,xp,src,cat:EX[ex].cat,ev:ev||null});if(prev>0&&amt>prev){p.gold+=10;beep('done');burstAt(lastRect,30,170);toast(`Nytt personbästa! ${short(EX[ex].n)}: ${amt} ${EX[ex].unit==='sec'?'s':'st'} (förra ${prev}). +10 guld`,'ach')}afterGain(before,`+${xp} XP · ${short(EX[ex].n)}`,rollLoot('set'))}
+/* Import från WoW-addonet: WFFA- + base64(JSON) från /fit export.
+   v1 (textkoden): {v:1,id,c:karaktär,sets:[{u:löpnummer,t:unix-sekunder,ex,amt,ev,src}]}
+   v2 (QR-koden, base64url): {v:2,id,c,t:starttid,e:[övningar],k:[händelser],s:[[u,sekunder efter t,e-index,antal,k-index]]} */
+function parseAddonCode(raw){raw=String(raw||'').replace(/\s+/g,'');const at=raw.indexOf('#i=');if(at>=0)raw=decodeURIComponent(raw.slice(at+3));if(!raw.startsWith('WFFA-'))throw new Error('prefix');
+  let b=raw.slice(5).replace(/-/g,'+').replace(/_/g,'/');while(b.length%4)b+='=';const o=b64d(b);
+  if(o&&o.v===2&&Array.isArray(o.s)&&Array.isArray(o.e)){const k=Array.isArray(o.k)?o.k:[];const t0=Number(o.t)||0;
+    return {v:1,id:String(o.c||'?')+':'+String(o.id),c:o.c,page:Array.isArray(o.p)&&o.p.length===2?o.p.map(Number):null,sets:o.s.map(a=>Array.isArray(a)?{u:a[0],t:t0+(Number(a[1])||0),ex:o.e[a[2]],amt:a[3],ev:k[a[4]]}:null)}}
+  if(!o||o.v!==1||typeof o.id!=='string'||!Array.isArray(o.sets))throw new Error('format');return o}
+/* QR-koden från addonet öppnar appen med #i=WFFA-… i adressen. */
+let pendingImport=null;
+function importFromHash(){const h=location.hash||'';if(!h.startsWith('#i='))return;const code=h.slice(3);try{history.replaceState(null,'',location.pathname+location.search)}catch(e){location.hash=''}
+  const p=P();if(!p){pendingImport=code;toast('Skapa en hjälte först, sedan importeras seten från WoW.','info');return}
+  const r=importAddon(p,code);if(!r.ok)toast(r.msg,'info')}
+window.addEventListener('hashchange',importFromHash);
+/* QR-skanner i appen. Behövs på iPhone när appen ligger på hemskärmen: den har egen
+   lagring, och kamerans QR-länk öppnas i Safari. jsQR laddas först när skannern öppnas. */
+let scan=null;
+function loadJsQR(){if(window.jsQR)return Promise.resolve(window.jsQR);return new Promise((ok,no)=>{const s=document.createElement('script');s.src='https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.js';s.onload=()=>window.jsQR?ok(window.jsQR):no(new Error('jsqr'));s.onerror=()=>no(new Error('jsqr'));document.head.appendChild(s)})}
+function stopScan(){if(!scan)return;const s=scan;scan=null;s.stop=true;cancelAnimationFrame(s.raf);if(s.stream)s.stream.getTracks().forEach(t=>t.stop())}
+function scanMsg(t){const el=$('#scanMsg');if(el)el.textContent=t}
+async function startScan(note){
+  stopScan();
+  if(!navigator.mediaDevices||!navigator.mediaDevices.getUserMedia){toast('Kameran går inte att använda här. Klistra in koden i stället.','info');return}
+  modal(`<p class="eyebrow">Import från WoW</p><h2>Skanna QR-koden</h2>
+    <div class="scan"><video id="scanVideo" playsinline muted autoplay></video><i></i></div>
+    <p class="tip" id="scanMsg">${esc(note||'Startar kameran…')}</p>
+    <button type="button" class="btn" data-act="close">Avbryt</button>`);
+  const s=scan={stop:false,last:'',lastAt:0};
+  try{
+    const [lib,stream]=await Promise.all([loadJsQR(),navigator.mediaDevices.getUserMedia({video:{facingMode:'environment'},audio:false})]);
+    if(s.stop){stream.getTracks().forEach(t=>t.stop());return}
+    s.stream=stream;const v=$('#scanVideo');v.srcObject=stream;await v.play().catch(()=>{});
+    if(!note)scanMsg('Rikta kameran mot QR-koden som /fit export visar i spelet. Håll telefonen 20–40 cm från skärmen.');
+    const c=document.createElement('canvas');const ctx=c.getContext('2d',{willReadFrequently:true});
+    const tick=()=>{if(s.stop)return;
+      if(v.readyState>=2&&v.videoWidth){const k=Math.min(1,900/Math.max(v.videoWidth,v.videoHeight));c.width=Math.round(v.videoWidth*k);c.height=Math.round(v.videoHeight*k);ctx.drawImage(v,0,0,c.width,c.height);
+        const r=lib(ctx.getImageData(0,0,c.width,c.height).data,c.width,c.height,{inversionAttempts:'dontInvert'});
+        if(r&&r.data&&r.data.includes('WFFA-')&&!(r.data===s.last&&Date.now()-s.lastAt<4000)){s.last=r.data;s.lastAt=Date.now();if(onScanned(r.data))return}}
+      s.raf=requestAnimationFrame(tick)};
+    tick();
+  }catch(e){if(s.stop)return;const denied=e&&(e.name==='NotAllowedError'||e.name==='SecurityError');
+    scanMsg(denied?'Appen fick inte använda kameran. Tillåt kameran (Inställningar → Safari → Kamera) och försök igen.':e&&e.message==='jsqr'?'QR-läsaren kunde inte laddas. Den behöver nätet första gången. Klistra in koden i stället.':'Kameran kunde inte startas. Klistra in koden i stället.')}
+}
+/* Returnerar true när skannern ska stängas. */
+function onScanned(text){const p=P();if(!p)return false;vib(40);
+  const r=importAddon(p,text);
+  const more=r.page&&r.page[0]<r.page[1];
+  if(!r.ok){scanMsg(r.dup&&r.page&&r.page[1]>1?`QR ${r.page[0]} av ${r.page[1]} är redan importerad. Tryck Nästa i spelet.`:r.msg);return false}
+  stopScan();closeModal();
+  if(more)setTimeout(()=>queueModal(()=>startScan(`QR ${r.page[0]} av ${r.page[1]} klar. Tryck Nästa i spelet och skanna nästa.`)),900);
+  return true}
+function importAddon(p,raw){
+  let o;try{o=parseAddonCode(raw)}catch(e){return {ok:false,msg:'Koden fungerade inte. Den ska börja med WFFA- och komma från /fit export i spelet.'}}
+  p.addon=p.addon&&Array.isArray(p.addon.ids)?p.addon:{ids:[],seen:{}};p.addon.seen=p.addon.seen||{};
+  if(p.addon.ids.includes(o.id))return {ok:false,dup:true,page:o.page,msg:'Den här koden är redan importerad.'};
+  const ck=String(o.c||'?').slice(0,64);const seen=new Set(p.addon.seen[ck]||[]);const now=Date.now();
+  const sets=o.sets.filter(s=>s&&EX[s.ex]&&Number(s.amt)>0&&!(s.u!=null&&seen.has(s.u))).sort((a,b)=>(Number(a.t)||0)-(Number(b.t)||0));
+  const rememberId=()=>{p.addon.ids.push(o.id);if(p.addon.ids.length>300)p.addon.ids.splice(0,p.addon.ids.length-300)};
+  if(!sets.length){rememberId();save();return {ok:false,dup:true,page:o.page,msg:'Inga nya set i koden. De är redan importerade.'}}
+  autoFreeze(p);const before=levelInfo(totalXP(p)).L;const used=new Set(p.log.map(x=>x.t));let xp=0;
+  for(const s of sets){
+    const amt=Math.min(1000,Math.max(1,Math.round(Number(s.amt))));
+    let t=Number(s.t)*1000;if(!isFinite(t)||t<=0||t>now+864e5)t=now;t=Math.round(t);while(used.has(t))t++;used.add(t);
+    const g=calcXP(s.ex,amt,'addon').xp;xp+=g;
+    addLog({t,d:dkey(new Date(t)),ex:s.ex,amt,xp:g,src:'addon',cat:EX[s.ex].cat,ev:EVENTS.some(e=>e.id===s.ev)?s.ev:null});
+    if(s.u!=null)seen.add(s.u);
+  }
+  rememberId();p.addon.seen[ck]=[...seen];
+  const ta=$('#addonCode');if(ta)ta.value='';
+  afterGain(before,`+${xp} XP · ${sets.length} set från WoW till ${p.name}`,null);
+  return {ok:true,sets:sets.length,xp,page:o.page};
+}
 function grant(xp,gold,src,label){const p=P();const before=levelInfo(totalXP(p)).L;if(xp)addLog({ex:null,amt:0,xp,src,cat:null});p.gold+=gold;afterGain(before,label,rollLoot(src))}
 
 /* ================= Motion ================= */
@@ -834,7 +909,7 @@ function queueModal(fn){if($('#modal').hidden)fn();else mq.push(fn)}
 
 /* ================= Spelkväll ================= */
 function sessStats(p,start,end,raid){const L=p.log.filter(x=>x.t>=start&&x.t<=end);const sets=L.filter(x=>x.ex);const ex={};sets.forEach(x=>{ex[x.ex]=(ex[x.ex]||0)+x.amt});
-  return {start,end,raid:!!raid,min:Math.max(0,Math.round((end-start)/60000)),sets:sets.length,xp:L.reduce((a,x)=>a+x.xp,0),deaths:sets.filter(x=>x.ev==='death').length,events:sets.filter(x=>x.src==='event').length,alarms:sets.filter(x=>x.src==='alarm').length,
+  return {start,end,raid:!!raid,min:Math.max(0,Math.round((end-start)/60000)),sets:sets.length,xp:L.reduce((a,x)=>a+x.xp,0),deaths:sets.filter(x=>x.ev==='death').length,events:sets.filter(x=>x.src==='event'||x.src==='addon').length,alarms:sets.filter(x=>x.src==='alarm').length,
     top:Object.entries(ex).sort((a,b)=>b[1]-a[1]).slice(0,3),loot:p.lootLog.filter(x=>x.t>=start&&x.t<=end).map(x=>({id:x.id,dup:x.dup}))}}
 function startSession(raid){const p=P();if(p.session)return;p.session={start:Date.now(),raid:!!raid,alarmByMe:!S.alarm.on};save();if(!S.alarm.on)startAlarm();else renderAll();toast(raid?'Raidkväll startad: +10 % XP och mer loot':'Spelkväll startad. Lycka till där ute!','ach')}
 function endSession(silent,endAt){const p=P();const se=p.session;if(!se)return;const end=endAt||Date.now();const st=sessStats(p,se.start,end,se.raid);p.session=null;
@@ -1011,7 +1086,7 @@ function beep(kind){try{ensureAudio();if(!actx)return;const notes=kind==='alarm'
 /* ================= Modal / toast ================= */
 let pending=null;
 function modal(html,cls,redraw){const m=$('#modal');m.innerHTML=`<div class="m-box ${cls||''}" role="dialog" aria-modal="true">${html}</div>`;m.hidden=false;if(!redraw){A(m,{opacity:[0,1]},{duration:.22});if(isSheet())A(m.firstElementChild,{y:['100%','0%']},{type:'spring',bounce:.12,duration:.5});else A(m.firstElementChild,{opacity:[0,1],scale:[.9,1],y:[28,0]},{type:'spring',bounce:.32,duration:.55})}const f=m.querySelector('[data-autofocus]')||m.querySelector('.btn.primary');if(f&&!redraw)f.focus()}
-function closeModal(){const m=$('#modal');if(CAN&&!m.hidden&&m.firstElementChild){const g=m.cloneNode(true);g.removeAttribute('id');g.className='modal-ghost';g.setAttribute('aria-hidden','true');g.querySelectorAll('[id]').forEach(x=>x.removeAttribute('id'));document.body.appendChild(g);A(g,{opacity:[1,0]},{duration:.25});after(isSheet()?A(g.firstElementChild,{y:['0%','100%']},{duration:.28,ease:EASE}):A(g.firstElementChild,{scale:[1,.94],y:[0,12]},{duration:.25,ease:EASE}),()=>g.remove())}m.hidden=true;m.innerHTML='';if(pending&&pending.timer)clearInterval(pending.timer.iv);pending=null;if(mq.length)setTimeout(()=>{if($('#modal').hidden&&mq.length)mq.shift()()},300)}
+function closeModal(){stopScan();const m=$('#modal');if(CAN&&!m.hidden&&m.firstElementChild){const g=m.cloneNode(true);g.removeAttribute('id');g.className='modal-ghost';g.setAttribute('aria-hidden','true');g.querySelectorAll('[id]').forEach(x=>x.removeAttribute('id'));document.body.appendChild(g);A(g,{opacity:[1,0]},{duration:.25});after(isSheet()?A(g.firstElementChild,{y:['0%','100%']},{duration:.28,ease:EASE}):A(g.firstElementChild,{scale:[1,.94],y:[0,12]},{duration:.25,ease:EASE}),()=>g.remove())}m.hidden=true;m.innerHTML='';if(pending&&pending.timer)clearInterval(pending.timer.iv);pending=null;if(mq.length)setTimeout(()=>{if($('#modal').hidden&&mq.length)mq.shift()()},300)}
 function toast(msg,kind){const box=$('#toasts');while(box.children.length>=(isMobile()?3:4))box.firstChild.remove();const t=document.createElement('div');t.className='toast '+(kind||'');t.textContent=msg;box.appendChild(t);if(CAN){A(t,{opacity:[0,1],x:[60,0],scale:[.9,1]},{type:'spring',bounce:.35,duration:.55});setTimeout(()=>after(A(t,{opacity:0,x:30,scale:.96},{duration:.3,ease:EASE}),()=>t.remove()),2900)}else setTimeout(()=>t.remove(),3300)}
 
 function openLog(ex,src,f,ctx){const t=target(ex,f||1);pending={ex,amt:t,src:src||'free',ctx:ctx||{},timer:null};drawLog()}
@@ -1301,6 +1376,9 @@ function viewHero(p){
         <div class="field"><span>Övningsfigurer</span><div class="seg" role="group">${[["auto","Som enheten"],["anim","Animerade"],["still","Stilla"],["hidden","Dolda"]].map(([k,n])=>`<button type="button" data-act="setPref" data-k="fig" data-v="${k}" aria-pressed="${S.prefs.fig===k}">${n}</button>`).join('')}</div><small class="tip">Stilla visar start- och slutposition. Dolda tar bort figuren helt.</small></div>
         <div class="field"><span>Redskap hemma</span><div class="checks">${Object.entries(EQUIP).map(([k,n])=>`<label><input type="checkbox" data-act="setEq" value="${k}" ${p.equip.includes(k)?'checked':''}>${n}</label>`).join('')}</div></div>
         <div class="field"><span>Hjältar på den här enheten</span><div class="heroes">${Object.values(S.profiles).map(h=>`<button type="button" class="btn small ${h.id===p.id?'primary':''}" data-act="switch" data-v="${h.id}">${esc(h.name)}</button>`).join('')}<button type="button" class="btn small ghost" data-act="newHero">+ Ny hjälte</button></div></div>
+        <label class="field"><span>Importera från WoW-addonet</span><textarea id="addonCode" placeholder="WFFA-…" spellcheck="false"></textarea></label>
+        <p class="tip">Skriv /fit export i spelet och tryck Skanna QR från WoW, eller kopiera koden och klistra in den här. Seten loggas med rätt datum och ger XP som spelhändelser. Samma kod kan bara importeras en gång.</p>
+        <div class="row"><button type="button" class="btn small primary" data-act="scanAddon">Skanna QR från WoW</button><button type="button" class="btn small" data-act="importAddon">Importera kod</button></div>
         <label class="field"><span>Säkerhetskopia</span><textarea id="backupCode" readonly>WFFB-${b64e(p)}</textarea></label>
         <p class="tip">Sparas bara i den här webbläsaren. Kopiera koden ibland och spara den, så kan du återställa hjälten om webbläsardatan rensas.</p>
         <div class="row"><button type="button" class="btn small" data-act="copy" data-v="backupCode">Kopiera säkerhetskopia</button>
@@ -1321,7 +1399,7 @@ document.addEventListener('click',ev=>{
     case 'tab':S.tab=v;confirmDelete=false;save();renderAll();window.scrollTo({top:0});break;
     case 'draftCls':draft.name=$('#c-name').value;draft.cls=v;renderAll();break;
     case 'draftDiff':draft.name=$('#c-name').value;draft.diff=v;renderAll();break;
-    case 'create':{const name=($('#c-name').value||'').trim();if(!name){toast('Ge hjälten ett namn först','info');$('#c-name').focus();return}const np=norm({name,cls:draft.cls,diff:draft.diff,equip:draft.equip.slice()});S.profiles[np.id]=np;S.active=np.id;S.tab='spela';draft={name:'',cls:'warrior',diff:'normal',equip:[]};save();renderAll();toast(`Välkommen, ${name}!`,'ach');if(!S.introSeen)setTimeout(showIntro,CAN?500:0);break}
+    case 'create':{const name=($('#c-name').value||'').trim();if(!name){toast('Ge hjälten ett namn först','info');$('#c-name').focus();return}const np=norm({name,cls:draft.cls,diff:draft.diff,equip:draft.equip.slice()});S.profiles[np.id]=np;S.active=np.id;S.tab='spela';draft={name:'',cls:'warrior',diff:'normal',equip:[]};save();renderAll();toast(`Välkommen, ${name}!`,'ach');if(pendingImport){const r=importAddon(np,pendingImport);pendingImport=null;if(!r.ok)toast(r.msg,'info')}if(!S.introSeen)setTimeout(showIntro,CAN?500:0);break}
     case 'cancelCreate':S.active=S.active&&S.profiles[S.active]?S.active:Object.keys(S.profiles)[0];renderAll();break;
     case 'event':{if(lpFired){lpFired=false;return}const e=eventsFor(p).find(x=>x.id===v);if(!e)return;openLog(e.ex,'event',e.f,{title:e.n,ev:e.id});break}
     case 'ex':openLog(v,'free',1,{});break;
@@ -1363,6 +1441,8 @@ document.addEventListener('click',ev=>{
     case 'wear':{const fromModal=!$('#modal').hidden;if(fromModal)closeModal();wear(v);if(CAN){const t=$('.portrait');A(t,{scale:[1,1.15,1]},{duration:.5});A($('.frame'),{opacity:[.6,1]},{duration:.5})}break}
     case 'unwear':p.look[v]=null;save();renderAll();break;
     case 'rmRival':p.rivals=p.rivals.filter(x=>x.n!==v);save();renderAll();break;
+    case 'scanAddon':startScan();break;
+    case 'importAddon':{const r=importAddon(p,$('#addonCode').value);if(!r.ok)toast(r.msg,'info');break}
     case 'importBackup':{const raw=($('#importCode').value||'').trim();try{if(!raw.startsWith('WFFB-'))throw 0;const o=norm(b64d(raw.slice(5)));if(!Array.isArray(o.log)||!CLASSES[o.cls]||!DIFF[o.diff])throw 0;S.profiles[o.id]=o;S.active=o.id;save();renderAll();toast(`${o.name} är tillbaka!`,'ach')}catch(e){toast('Koden fungerade inte. Den ska börja med WFFB-','info')}break}
   }
 });
@@ -1413,5 +1493,6 @@ if(P())autoFreeze(P());
 Object.values(S.profiles).forEach(pp=>{if(pp.session&&Date.now()-pp.session.start>12*3600e3){const prev=S.active;S.active=pp.id;const last=pp.log.filter(x=>x.t>=pp.session.start).reduce((m,x)=>Math.max(m,x.t),pp.session.start+3600e3);endSession(true,Math.min(last,pp.session.start+12*3600e3));S.active=prev}});
 if(S.alarm.on&&S.alarm.end<Date.now())armAlarm();
 renderAll();
+importFromHash();
 })();
 </script>
