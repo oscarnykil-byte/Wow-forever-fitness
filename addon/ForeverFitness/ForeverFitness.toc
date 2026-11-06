@@ -1,0 +1,12 @@
+## Interface: 16001
+## Title: Forever Fitness
+## Notes: Kroppsviktsövningar när något händer i spelet. Kompletterar webbappen Forever Fitness.
+## Author: Forever Fitness
+## Version: 0.1.0
+## SavedVariables: ForeverFitnessDB
+## SavedVariablesPerCharacter: ForeverFitnessCharDB
+
+Data.lua
+Core.lua
+Notify.lua
+Events.lua
